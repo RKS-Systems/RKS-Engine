@@ -154,6 +154,7 @@ enum {
 
 #define TAG_HELD_ITEM 55120
 #define TAG_SELECT_CURSOR 55121
+#define TAG_HELD_ITEM_ICON_BASE 55123 // Skipped 1 to give room for TAG_SELECT_CURSOR + 1
 
 #define PARTY_PAL_SELECTED     (1 << 0)
 #define PARTY_PAL_FAINTED      (1 << 1)
@@ -208,6 +209,8 @@ struct PartyMenuInternal
     s16 cursorSpeedX;
     s16 cursorSpeedY;
     u8 cursorMoveSteps;
+    // Item mode (activated by selecting Item in mon menu)
+    bool8 inItemMode;
 
     u8 windowId[3];
     u8 actions[8];
@@ -564,8 +567,10 @@ static void InitPartyMenu(u8 menuType, u8 layout, u8 partyAction, bool8 keepCurs
         for (i = 0; i < ARRAY_COUNT(sPartyMenuInternal->windowId); i++)
             sPartyMenuInternal->windowId[i] = WINDOW_NONE;
 
+        sPartyMenuInternal->inItemMode = FALSE;
         if (!keepCursorPos)
             gPartyMenu.slotId = 0;
+
         else if (gPartyMenu.slotId > PARTY_SIZE - 1 || GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES) == SPECIES_NONE)
             gPartyMenu.slotId = 0;
 
@@ -3404,6 +3409,7 @@ static void SwitchPartyMon(void)
 // Finish switching mons or using Softboiled
 static void FinishTwoMonAction(u8 taskId)
 {
+    u8 i;
     PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
     gPartyMenu.action = PARTY_ACTION_CHOOSE_MON;
     AnimatePartySlot(gPartyMenu.slotId, 0);
@@ -3411,6 +3417,15 @@ static void FinishTwoMonAction(u8 taskId)
     AnimatePartySlot(gPartyMenu.slotId2, 1);
     DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
     CreatePartyMonSelectSprite(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
+    
+    // Reset item icons to generic if we were in item mode
+    if (sPartyMenuInternal->inItemMode)
+    {
+        sPartyMenuInternal->inItemMode = FALSE;
+        for (i = 0; i < PARTY_SIZE; i++)
+            UpdatePartyMonHeldItemSprite(&gPlayerParty[i], &sPartyMenuBoxes[i]);
+    }
+
     gTasks[taskId].func = Task_HandleChooseMonInput;
 }
 
@@ -3441,12 +3456,19 @@ static void CursorCb_Cancel1(u8 taskId)
 
 static void CursorCb_Item(u8 taskId)
 {
+    u8 i;
     PlaySE(SE_SELECT);
     PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
     PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
     SetPartyMonSelectionActions(gPlayerParty, gPartyMenu.slotId, ACTIONS_ITEM);
     DisplaySelectionWindow(SELECTWINDOW_ITEM);
     DisplayPartyMenuStdMessage(PARTY_MSG_DO_WHAT_WITH_ITEM);
+    
+    // Switch from generic held item icon to actual item icons
+    sPartyMenuInternal->inItemMode = TRUE;
+    for (i = 0; i < PARTY_SIZE; i++)
+        UpdatePartyMonHeldItemSprite(&gPlayerParty[i], &sPartyMenuBoxes[i]);
+
     gTasks[taskId].data[0] = 0xFF;
     gTasks[taskId].func = Task_HandleSelectionMenuInput;
 }
@@ -3626,7 +3648,20 @@ static void Task_UpdateHeldItemSprite(u8 taskId)
 
     if (IsPartyMenuTextPrinterActive() != TRUE)
     {
-        UpdatePartyMonHeldItemSprite(mon, &sPartyMenuBoxes[gPartyMenu.slotId]);
+        u8 i;
+        
+        // Reset to generic icons after finishing item operations
+        if (sPartyMenuInternal->inItemMode) 
+        {
+            sPartyMenuInternal->inItemMode = FALSE;
+            for (i = 0; i < PARTY_SIZE; i++)
+                UpdatePartyMonHeldItemSprite(&gPlayerParty[i], &sPartyMenuBoxes[i]);
+        }
+        else
+        {
+            UpdatePartyMonHeldItemSprite(mon, &sPartyMenuBoxes[gPartyMenu.slotId]);
+        }
+
         if (gPartyMenu.menuType == PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS)
         {
             if (GetMonData(mon, MON_DATA_HELD_ITEM) != ITEM_NONE)
@@ -3855,6 +3890,16 @@ static void CursorCb_Cancel2(u8 taskId)
     PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
     PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
     SetPartyMonSelectionActions(gPlayerParty, gPartyMenu.slotId, GetPartyMenuActionsType(mon));
+    
+    // If canceling back to main action menu from Item mode, reset to generic held item icons
+    if (sPartyMenuInternal->inItemMode)
+    {
+        u8 i;
+        sPartyMenuInternal->inItemMode = FALSE;
+        for (i = 0; i < PARTY_SIZE; i++)
+            UpdatePartyMonHeldItemSprite(&gPlayerParty[i], &sPartyMenuBoxes[i]);
+    }
+
     if (gPartyMenu.menuType != PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS)
     {
         DisplaySelectionWindow(SELECTWINDOW_ACTIONS);
@@ -4458,12 +4503,52 @@ static void SpriteCB_UpdatePartyMonIcon(struct Sprite *sprite)
     UpdateMonIconFrame(sprite);
 }
 
+static const union AffineAnimCmd sAffineAnim_ItemIcon_Small[] =
+{
+    // scale to 75% of original item icon sprite
+    AFFINEANIMCMD_FRAME(192, 192, 0, 0),
+    AFFINEANIMCMD_END
+};
+
+static const union AffineAnimCmd *const sAffineAnims_ItemIcon[] =
+{
+    sAffineAnim_ItemIcon_Small,
+};
+
+static void CreatePartyMonCustomItemIcon(struct PartyMenuBox *menuBox, u16 item)
+{
+    u8 slot = menuBox - sPartyMenuBoxes;
+    u16 tag = TAG_HELD_ITEM_ICON_BASE + slot;
+    u8 spriteId = AddItemIconSprite(tag, tag, item);
+    
+    if (spriteId != MAX_SPRITES)
+    {
+        menuBox->itemSpriteId = spriteId;
+        gSprites[spriteId].x = menuBox->spriteCoords[2];
+        gSprites[spriteId].y = menuBox->spriteCoords[3];
+        gSprites[spriteId].oam.priority = 1;
+        
+        gSprites[spriteId].oam.affineMode = ST_OAM_AFFINE_NORMAL;
+        gSprites[spriteId].affineAnims = sAffineAnims_ItemIcon;
+        InitSpriteAffineAnim(&gSprites[spriteId]);
+        StartSpriteAffineAnim(&gSprites[spriteId], 0);
+    }
+}
+
 static void CreatePartyMonHeldItemSprite(struct Pokemon *mon, struct PartyMenuBox *menuBox)
 {
     if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
     {
-        menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 0);
-        UpdatePartyMonHeldItemSprite(mon, menuBox);
+        if (gPartyMenu.action == PARTY_ACTION_GIVE_ITEM || gPartyMenu.action == PARTY_ACTION_MOVE_ITEM || sPartyMenuInternal->inItemMode)
+        {
+            menuBox->itemSpriteId = MAX_SPRITES;
+            UpdatePartyMonHeldItemSprite(mon, menuBox);
+        }
+        else
+        {
+            menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 0);
+            UpdatePartyMonHeldItemSprite(mon, menuBox);
+        }
     }
 }
 
@@ -4471,15 +4556,65 @@ static void CreatePartyMonHeldItemSpriteParameterized(u16 species, u16 item, str
 {
     if (species != SPECIES_NONE)
     {
-        menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 0);
-        gSprites[menuBox->itemSpriteId].oam.priority = 0;
-        ShowOrHideHeldItemSprite(item, menuBox);
+        if (gPartyMenu.action == PARTY_ACTION_GIVE_ITEM || gPartyMenu.action == PARTY_ACTION_MOVE_ITEM || sPartyMenuInternal->inItemMode)
+        {
+            menuBox->itemSpriteId = MAX_SPRITES;
+            if (item != ITEM_NONE)
+                 CreatePartyMonCustomItemIcon(menuBox, item);
+        }
+        else
+        {
+            menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 0);
+            gSprites[menuBox->itemSpriteId].oam.priority = 0;
+            ShowOrHideHeldItemSprite(item, menuBox);
+        }
     }
 }
 
 static void UpdatePartyMonHeldItemSprite(struct Pokemon *mon, struct PartyMenuBox *menuBox)
 {
-    ShowOrHideHeldItemSprite(GetMonData(mon, MON_DATA_HELD_ITEM), menuBox);
+    u8 slot = menuBox - sPartyMenuBoxes;
+    u16 tag = TAG_HELD_ITEM_ICON_BASE + slot;
+
+    if (gPartyMenu.action == PARTY_ACTION_GIVE_ITEM || gPartyMenu.action == PARTY_ACTION_MOVE_ITEM || sPartyMenuInternal->inItemMode)
+    {
+        u16 item = GetMonData(mon, MON_DATA_HELD_ITEM);
+
+
+        if (menuBox->itemSpriteId != MAX_SPRITES)
+        {
+            DestroySprite(&gSprites[menuBox->itemSpriteId]);
+            FreeSpriteTilesByTag(tag);
+            FreeSpritePaletteByTag(tag);
+            menuBox->itemSpriteId = MAX_SPRITES;
+        }
+
+        if (item != ITEM_NONE)
+        {
+            CreatePartyMonCustomItemIcon(menuBox, item);
+        }
+    }
+    else
+    {
+        if (menuBox->itemSpriteId != MAX_SPRITES)
+        {
+            if (gSprites[menuBox->itemSpriteId].template->tileTag != TAG_HELD_ITEM)
+            {
+                DestroySprite(&gSprites[menuBox->itemSpriteId]);
+                FreeSpriteTilesByTag(tag);
+                FreeSpritePaletteByTag(tag);
+                menuBox->itemSpriteId = MAX_SPRITES;
+            }
+        }
+        
+        if (menuBox->itemSpriteId == MAX_SPRITES && GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
+        {
+            menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 0);
+        }
+        
+        if (menuBox->itemSpriteId != MAX_SPRITES)
+            ShowOrHideHeldItemSprite(GetMonData(mon, MON_DATA_HELD_ITEM), menuBox);
+    }
 }
 
 static void ShowOrHideHeldItemSprite(u16 item, struct PartyMenuBox *menuBox)
