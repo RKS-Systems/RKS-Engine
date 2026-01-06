@@ -200,6 +200,15 @@ struct PartyMenuInternal
     u32 spriteIdConfirmPokeball:7;
     u32 spriteIdCancelPokeball:7;
     u32 messageId:14;
+    // Cursor movement state
+    s16 cursorTargetX;
+    s16 cursorTargetY;
+    s32 cursorNewX;
+    s32 cursorNewY;
+    s16 cursorSpeedX;
+    s16 cursorSpeedY;
+    u8 cursorMoveSteps;
+
     u8 windowId[3];
     u8 actions[8];
     u8 numActions;
@@ -240,6 +249,7 @@ static EWRAM_DATA u8 sInitialLevel = 0;
 static EWRAM_DATA u8 sFinalLevel = 0;
 static EWRAM_DATA u8 sSelectCursorSpriteId = 0;
 static EWRAM_DATA u8 sItemIconSpriteId = 0;
+
 
 // IWRAM common
 COMMON_DATA void (*gItemUseCB)(u8, TaskFunc) = NULL;
@@ -583,6 +593,31 @@ static void RefreshPartyMenu(void) //Refreshes the party menu without restarting
 static void CB2_UpdatePartyMenu(void)
 {
     RunTasks();
+    u8 cursorSpriteId = MAX_SPRITES;
+    if (sSelectCursorSpriteId != MAX_SPRITES)
+        cursorSpriteId = sSelectCursorSpriteId;
+    else if (sItemIconSpriteId != MAX_SPRITES)
+        cursorSpriteId = sItemIconSpriteId;
+
+    if (cursorSpriteId != MAX_SPRITES)
+    {
+         if (sPartyMenuInternal->cursorMoveSteps != 0)
+         {
+             sPartyMenuInternal->cursorMoveSteps--;
+             sPartyMenuInternal->cursorNewX += sPartyMenuInternal->cursorSpeedX;
+             sPartyMenuInternal->cursorNewY += sPartyMenuInternal->cursorSpeedY;
+             if (sPartyMenuInternal->cursorMoveSteps != 0)
+             {
+                 gSprites[cursorSpriteId].x = sPartyMenuInternal->cursorNewX >> 8;
+                 gSprites[cursorSpriteId].y = sPartyMenuInternal->cursorNewY >> 8;
+             }
+             else
+             {
+                 gSprites[cursorSpriteId].x = sPartyMenuInternal->cursorTargetX;
+                 gSprites[cursorSpriteId].y = sPartyMenuInternal->cursorTargetY;
+             }
+         }
+    }
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
@@ -868,6 +903,8 @@ static void ResetPartyMenu(void)
     sPartyBgTilemapBuffer = NULL;
     sPartyMenuBoxes = NULL;
     sPartyBgGfxTilemap = NULL;
+    sSelectCursorSpriteId = MAX_SPRITES;
+    sItemIconSpriteId = MAX_SPRITES;
 }
 
 static bool8 AllocPartyMenuBg(void)
@@ -4481,20 +4518,47 @@ static void DestroyPartyMonSelectSprite(void)
     }
 }
 
+static void InitPartyMenuCursorMove(u8 spriteId, s16 targetX, s16 targetY)
+{
+    int yDistance, xDistance;
+
+    sPartyMenuInternal->cursorMoveSteps = 6;
+    sPartyMenuInternal->cursorTargetX = targetX;
+    sPartyMenuInternal->cursorTargetY = targetY;
+
+    yDistance = targetY - gSprites[spriteId].y;
+    xDistance = targetX - gSprites[spriteId].x;
+
+    yDistance <<= 8;
+    xDistance <<= 8;
+    sPartyMenuInternal->cursorSpeedX = xDistance / sPartyMenuInternal->cursorMoveSteps;
+    sPartyMenuInternal->cursorSpeedY = yDistance / sPartyMenuInternal->cursorMoveSteps;
+    sPartyMenuInternal->cursorNewX = gSprites[spriteId].x << 8;
+    sPartyMenuInternal->cursorNewY = gSprites[spriteId].y << 8;
+}
+
 static void CreatePartyMonItemIconSprite(struct PartyMenuBox *menuBox, u8 slot, u16 itemId)
 {
-    DestroyPartyMonItemIconSprite();
-    
     u8 x = menuBox->spriteCoords[0] - 8;
     u8 y = menuBox->spriteCoords[1];
-    
-    sItemIconSpriteId = AddItemIconSprite(TAG_SELECT_CURSOR + 1, TAG_SELECT_CURSOR + 1, itemId);
-    
-    if (sItemIconSpriteId != MAX_SPRITES)
+
+    if (sItemIconSpriteId != MAX_SPRITES && gSprites[sItemIconSpriteId].inUse)
     {
-        gSprites[sItemIconSpriteId].x = x;
-        gSprites[sItemIconSpriteId].y = y;
-        gSprites[sItemIconSpriteId].oam.priority = 0;
+        InitPartyMenuCursorMove(sItemIconSpriteId, x, y);
+    }
+    else
+    {
+        DestroyPartyMonItemIconSprite();
+        
+        sItemIconSpriteId = AddItemIconSprite(TAG_SELECT_CURSOR + 1, TAG_SELECT_CURSOR + 1, itemId);
+        
+        if (sItemIconSpriteId != MAX_SPRITES)
+        {
+            gSprites[sItemIconSpriteId].x = x;
+            gSprites[sItemIconSpriteId].y = y;
+            gSprites[sItemIconSpriteId].oam.priority = 0;
+            sPartyMenuInternal->cursorMoveSteps = 0;
+        }
     }
 }
 
@@ -4521,16 +4585,24 @@ static void CreatePartyMonSelectSprite(struct PartyMenuBox *menuBox, u8 slot)
     else
     {
         DestroyPartyMonItemIconSprite();
-        DestroyPartyMonSelectSprite();
+        // DestroyPartyMonSelectSprite();
         
         u8 x = menuBox->spriteCoords[0] - 16;
         u8 y = menuBox->spriteCoords[1] + 4;
         
-        sSelectCursorSpriteId = CreateSprite(&sSpriteTemplate_SelectCursor, x, y, 0);
-        
-        if (sSelectCursorSpriteId != MAX_SPRITES)
+        if (sSelectCursorSpriteId != MAX_SPRITES && gSprites[sSelectCursorSpriteId].inUse)
         {
-            gSprites[sSelectCursorSpriteId].oam.priority = 0; // Draw above mon sprite
+            InitPartyMenuCursorMove(sSelectCursorSpriteId, x, y);
+        }
+        else
+        {
+            sSelectCursorSpriteId = CreateSprite(&sSpriteTemplate_SelectCursor, x, y, 0);
+            
+            if (sSelectCursorSpriteId != MAX_SPRITES)
+            {
+                gSprites[sSelectCursorSpriteId].oam.priority = 0; // Draw above mon sprite
+                sPartyMenuInternal->cursorMoveSteps = 0;
+            }
         }
     }
 }
