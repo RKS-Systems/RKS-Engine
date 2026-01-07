@@ -3425,6 +3425,19 @@ static void FinishTwoMonAction(u8 taskId)
         for (i = 0; i < PARTY_SIZE; i++)
             UpdatePartyMonHeldItemSprite(&gPlayerParty[i], &sPartyMenuBoxes[i]);
     }
+    else
+    {
+        // Make sure item sprites are visible again (e.g., after canceling MOVE_ITEM)
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if (sPartyMenuBoxes[i].itemSpriteId != MAX_SPRITES)
+            {
+                u16 item = GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM);
+                if (item != ITEM_NONE)
+                    gSprites[sPartyMenuBoxes[i].itemSpriteId].invisible = FALSE;
+            }
+        }
+    }
 
     gTasks[taskId].func = Task_HandleChooseMonInput;
 }
@@ -4691,7 +4704,7 @@ static void CreatePartyMonItemIconSprite(struct PartyMenuBox *menuBox, u8 slot, 
         {
             gSprites[sItemIconSpriteId].x = x;
             gSprites[sItemIconSpriteId].y = y;
-            gSprites[sItemIconSpriteId].oam.priority = 0;
+            gSprites[sItemIconSpriteId].oam.priority = 1;
             sPartyMenuInternal->cursorMoveSteps = 0;
         }
     }
@@ -4735,7 +4748,7 @@ static void CreatePartyMonSelectSprite(struct PartyMenuBox *menuBox, u8 slot)
             
             if (sSelectCursorSpriteId != MAX_SPRITES)
             {
-                gSprites[sSelectCursorSpriteId].oam.priority = 0; // Draw above mon sprite
+                gSprites[sSelectCursorSpriteId].oam.priority = 1; // Match held item sprite priority to stay below message box
                 sPartyMenuInternal->cursorMoveSteps = 0;
             }
         }
@@ -8481,11 +8494,16 @@ void CursorCb_MoveItemCallback(u8 taskId)
         HandleChooseMonCancel(taskId, &gPartyMenu.slotId2);
         break;
     case 1:     // User hit A on a Pokemon
-        // Pokemon can't give away items to eggs or themselves
-        if (GetMonData(&gPlayerParty[gPartyMenu.slotId2], MON_DATA_IS_EGG)
-            || gPartyMenu.slotId == gPartyMenu.slotId2)
+        // Pokemon can't give away items to eggs
+        if (GetMonData(&gPlayerParty[gPartyMenu.slotId2], MON_DATA_IS_EGG))
         {
             PlaySE(SE_FAILURE);
+            return;
+        }
+        // If pressing A on the same Pokemon, cancel the move action
+        if (gPartyMenu.slotId == gPartyMenu.slotId2)
+        {
+            HandleChooseMonCancel(taskId, &gPartyMenu.slotId2);
             return;
         }
 
@@ -8561,6 +8579,11 @@ void CursorCb_MoveItem(u8 taskId)
         DisplayPartyMenuStdMessage(PARTY_MSG_MOVE_ITEM_WHERE);
         // update color of first selected box
         AnimatePartySlot(gPartyMenu.slotId, 1);
+        
+        // Hide the item sprite on the source Pokemon before showing it on cursor
+        if (sPartyMenuBoxes[gPartyMenu.slotId].itemSpriteId != MAX_SPRITES)
+            gSprites[sPartyMenuBoxes[gPartyMenu.slotId].itemSpriteId].invisible = TRUE;
+        
         CreatePartyMonSelectSprite(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
 
         // set up callback
