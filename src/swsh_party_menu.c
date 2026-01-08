@@ -1322,6 +1322,9 @@ static bool8 CreatePartyMonSpritesLoop(void)
 
 static void CreateCancelConfirmPokeballSprites(void)
 {
+    // Confirm/Cancel visuals disabled: buttons and pokeball sprites are intentionally not created.
+    // The original implementation (left commented) created BG tiles, windows, and sprites for Confirm/Cancel.
+    /*
     if (gPartyMenu.menuType == PARTY_MENU_TYPE_MULTI_SHOWCASE)
     {
         // The showcase has no Cancel/Confirm buttons
@@ -1342,7 +1345,8 @@ static void CreateCancelConfirmPokeballSprites(void)
         AnimatePartySlot(gPartyMenu.slotId, 1);
         CreatePartyMonSelectSprite(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
     }
-}
+    */
+} 
 
 void AnimatePartySlot(u8 slot, u8 animNum)
 {
@@ -1360,9 +1364,13 @@ void AnimatePartySlot(u8 slot, u8 animNum)
         return;
     case PARTY_SIZE: // Confirm
         if (animNum == 0)
-            SetBgTilemapPalette(1, 23, 16, 7, 2, 1);
+        {
+            // Disabled: SetBgTilemapPalette(1, 23, 16, 7, 2, 1);
+        }
         else
-            SetBgTilemapPalette(1, 23, 16, 7, 2, 2);
+        {
+            // Disabled: SetBgTilemapPalette(1, 23, 16, 7, 2, 2);
+        }
         spriteId = sPartyMenuInternal->spriteIdConfirmPokeball;
         break;
     case PARTY_SIZE + 1: // Cancel
@@ -1370,23 +1378,27 @@ void AnimatePartySlot(u8 slot, u8 animNum)
         if (!sPartyMenuInternal->chooseHalf)
         {
             if (animNum == 0)
-                SetBgTilemapPalette(1, 23, 17, 7, 2, 1);
+            {
+                // Disabled: SetBgTilemapPalette(1, 23, 17, 7, 2, 1);
+            }
             else
-                SetBgTilemapPalette(1, 23, 17, 7, 2, 2);
+            {
+                // Disabled: SetBgTilemapPalette(1, 23, 17, 7, 2, 2);
+            }
         }
         else if (animNum == 0)
         {
-            SetBgTilemapPalette(1, 23, 18, 7, 2, 1);
+            // Disabled: SetBgTilemapPalette(1, 23, 18, 7, 2, 1);
         }
         else
         {
-            SetBgTilemapPalette(1, 23, 18, 7, 2, 2);
+            // Disabled: SetBgTilemapPalette(1, 23, 18, 7, 2, 2);
         }
         spriteId = sPartyMenuInternal->spriteIdCancelPokeball;
         break;
     }
     PartyMenuStartSpriteAnim(spriteId, animNum);
-    ScheduleBgCopyTilemapToVram(1);
+    // Disabled: ScheduleBgCopyTilemapToVram(1);
 }
 
 static u8 GetPartyBoxPaletteFlags(u8 slot, u8 animNum)
@@ -1425,10 +1437,13 @@ static bool8 PartyBoxPal_ParnterOrDisqualifiedInArena(u8 slot)
 
 static void DrawCancelConfirmButtons(void)
 {
+    // Confirm/Cancel BG tile copies disabled. Kept here for reference and future replacement.
+    /*
     CopyToBgTilemapBufferRect_ChangePalette(1, sConfirmButton_Tilemap, 23, 16, 7, 2, 17);
     CopyToBgTilemapBufferRect_ChangePalette(1, sCancelButton_Tilemap, 23, 18, 7, 2, 17);
     ScheduleBgCopyTilemapToVram(1);
-}
+    */
+} 
 
 bool8 IsMultiBattle(void)
 {
@@ -2390,6 +2405,9 @@ static void CreateCancelConfirmWindows(bool8 chooseHalf)
     u8 offset;
     u8 mainOffset;
 
+    // Confirm/Cancel windows and text are disabled. The original logic is retained here (commented)
+    // for future rework; it used AddWindow and AddTextPrinterParameterized* to draw the text inside small windows.
+    /*
     if (gPartyMenu.menuType != PARTY_MENU_TYPE_MULTI_SHOWCASE)
     {
         if (chooseHalf == TRUE)
@@ -2425,7 +2443,8 @@ static void CreateCancelConfirmWindows(bool8 chooseHalf)
         CopyWindowToVram(cancelWindowId, COPYWIN_GFX);
         ScheduleBgCopyTilemapToVram(0);
     }
-}
+    */
+} 
 
 static u16 *GetPartyMenuPalBufferPtr(u8 paletteId)
 {
