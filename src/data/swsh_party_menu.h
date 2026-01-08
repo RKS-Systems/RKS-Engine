@@ -607,6 +607,7 @@ static const u8 sGenderPalOffsets[] = {11, 12};
 static const u8 sHPBarPalOffsets[] = {9, 10};
 static const u8 sPartyBoxPalOffsets1[] = {4, 5, 6};
 static const u8 sPartyBoxPalOffsets2[] = {1, 7, 8};
+static const u8 sPartyBoxPalOffsets3[] = {2, 3};
 static const u8 sPartyBoxNoMonPalOffsets[] = {1, 11, 12};
 
 // Palette ids
@@ -628,6 +629,14 @@ static const u8 sPartyBoxFaintedPalIds2[] = {81, 87, 88};
 static const u8 sPartyBoxCurrSelectionPalIds2[] = {97, 103, 104};
 static const u8 sPartyBoxSelectedForActionPalIds2[] = {161, 167, 168};
 static const u8 sPartyBoxNoMonPalIds[] = {17, 27, 28};
+// Text palettes
+static const u8 sPartyBoxEmptySlotPalIds3[] = {50, 51};
+static const u8 sPartyBoxMultiPalIds3[] = {66, 67};
+static const u8 sPartyBoxFaintedPalIds3[] = {82, 83};
+static const u8 sPartyBoxCurrSelectionPalIds3[] = {114, 115};
+static const u8 sPartyBoxCurrSelectionMultiPalIds3[] = {130, 131};
+static const u8 sPartyBoxCurrSelectionFaintedPalIds3[] = {146, 147};
+static const u8 sPartyBoxSelectedForActionPalIds3[] = {98, 99};
 
 static const u8 *const sActionStringTable[] =
 {
