@@ -240,6 +240,7 @@ EWRAM_DATA struct PartyMenu gPartyMenu = {0};
 static EWRAM_DATA struct PartyMenuBox *sPartyMenuBoxes = NULL;
 static EWRAM_DATA u8 *sPartyBgGfxTilemap = NULL;
 static EWRAM_DATA u8 *sPartyBgTilemapBuffer = NULL;
+static EWRAM_DATA u8 *sPartyBg3TilemapBuffer = NULL;
 EWRAM_DATA bool8 gPartyMenuUseExitCallback = 0;
 EWRAM_DATA u8 gSelectedMonPartyId = 0;
 EWRAM_DATA MainCallback gPostMenuFieldCallback = NULL;
@@ -634,6 +635,11 @@ static void VBlankCB_PartyMenu(void)
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
+    if (P_PARTY_MENU_SCROLLING_BG)
+    {
+        ChangeBgX(3, 64, BG_COORD_ADD);
+        ChangeBgY(3, 64, BG_COORD_ADD);
+    }
 }
 
 static void CB2_InitPartyMenu(void)
@@ -758,6 +764,8 @@ static bool8 ShowPartyMenu(void)
         gMain.state++;
         break;
     case 20:
+        AnimatePartySlot(gPartyMenu.slotId, 1);
+        CreatePartyMonSelectSprite(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
         gMain.state++;
         break;
     case 21:
@@ -906,6 +914,7 @@ static void ResetPartyMenu(void)
 {
     sPartyMenuInternal = NULL;
     sPartyBgTilemapBuffer = NULL;
+    sPartyBg3TilemapBuffer = NULL;
     sPartyMenuBoxes = NULL;
     sPartyBgGfxTilemap = NULL;
     sSelectCursorSpriteId = MAX_SPRITES;
@@ -918,17 +927,25 @@ static bool8 AllocPartyMenuBg(void)
     if (sPartyBgTilemapBuffer == NULL)
         return FALSE;
 
+    sPartyBg3TilemapBuffer = Alloc(0x800);
+    if (sPartyBg3TilemapBuffer == NULL)
+        return FALSE;
+
     memset(sPartyBgTilemapBuffer, 0, 0x800);
+    memset(sPartyBg3TilemapBuffer, 0, 0x800);
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sPartyMenuBgTemplates, ARRAY_COUNT(sPartyMenuBgTemplates));
     SetBgTilemapBuffer(1, sPartyBgTilemapBuffer);
+    SetBgTilemapBuffer(3, sPartyBg3TilemapBuffer);
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(3);
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_ON | DISPCNT_OBJ_1D_MAP);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     ShowBg(0);
     ShowBg(1);
     ShowBg(2);
+    ShowBg(3);
     return TRUE;
 }
 
@@ -939,39 +956,44 @@ static bool8 AllocPartyMenuBgGfx(void)
     switch (sPartyMenuInternal->data[0])
     {
     case 0:
-        sPartyBgGfxTilemap = malloc_and_decompress(gPartyMenuBg_Gfx, &sizeout);
+        sPartyBgGfxTilemap = malloc_and_decompress(sPartyMenuBg_Gfx_SwSh, &sizeout);
         LoadBgTiles(1, sPartyBgGfxTilemap, sizeout, 0);
         sPartyMenuInternal->data[0]++;
         break;
     case 1:
         if (!IsDma3ManagerBusyWithBgCopy())
         {
-            DecompressDataWithHeaderWram(gPartyMenuBg_Tilemap, sPartyBgTilemapBuffer);
+            DecompressDataWithHeaderWram(sPartyMenuBg_Main_Tilemap_SwSh, sPartyBgTilemapBuffer);
             sPartyMenuInternal->data[0]++;
         }
         break;
     case 2:
-        LoadPalette(gPartyMenuBg_Pal, BG_PLTT_ID(0), 11 * PLTT_SIZE_4BPP);
-        CpuCopy16(gPlttBufferUnfaded, sPartyMenuInternal->palBuffer, 11 * PLTT_SIZE_4BPP);
+        DecompressDataWithHeaderWram(sPartyMenuBg_Scroll_Tilemap_SwSh, sPartyBg3TilemapBuffer);
+        ScheduleBgCopyTilemapToVram(3);
         sPartyMenuInternal->data[0]++;
         break;
     case 3:
-        PartyPaletteBufferCopy(4);
+        LoadPalette(sPartyMenuBg_Pal_SwSh, BG_PLTT_ID(0), 11 * PLTT_SIZE_4BPP);
+        CpuCopy16(gPlttBufferUnfaded, sPartyMenuInternal->palBuffer, 11 * PLTT_SIZE_4BPP);
         sPartyMenuInternal->data[0]++;
         break;
     case 4:
-        PartyPaletteBufferCopy(5);
+        PartyPaletteBufferCopy(4);
         sPartyMenuInternal->data[0]++;
         break;
     case 5:
-        PartyPaletteBufferCopy(6);
+        PartyPaletteBufferCopy(5);
         sPartyMenuInternal->data[0]++;
         break;
     case 6:
-        PartyPaletteBufferCopy(7);
+        PartyPaletteBufferCopy(6);
         sPartyMenuInternal->data[0]++;
         break;
     case 7:
+        PartyPaletteBufferCopy(7);
+        sPartyMenuInternal->data[0]++;
+        break;
+    case 8:
         PartyPaletteBufferCopy(8);
         sPartyMenuInternal->data[0]++;
         break;
@@ -994,6 +1016,8 @@ static void FreePartyPointers(void)
         Free(sPartyMenuInternal);
     if (sPartyBgTilemapBuffer)
         Free(sPartyBgTilemapBuffer);
+    if (sPartyBg3TilemapBuffer)
+        Free(sPartyBg3TilemapBuffer);
     if (sPartyBgGfxTilemap)
         Free(sPartyBgGfxTilemap);
     if (sPartyMenuBoxes)
@@ -1435,7 +1459,7 @@ static bool8 PartyBoxPal_ParnterOrDisqualifiedInArena(u8 slot)
     return FALSE;
 }
 
-static void DrawCancelConfirmButtons(void)
+static void UNUSED DrawCancelConfirmButtons(void)
 {
     // Confirm/Cancel BG tile copies disabled. Kept here for reference and future replacement.
     /*
@@ -2393,17 +2417,17 @@ static void LoadPartyMenuWindows(void)
     DeactivateAllTextPrinters();
     for (i = 0; i < PARTY_SIZE; i++)
         FillWindowPixelBuffer(i, PIXEL_FILL(0));
-    LoadUserWindowBorderGfx(0, 0x4F, BG_PLTT_ID(13));
+    LoadUserWindowBorderGfx(0, 0x63, BG_PLTT_ID(13));
     LoadPalette(GetOverworldTextboxPalettePtr(), BG_PLTT_ID(14), PLTT_SIZE_4BPP);
     LoadPalette(gStandardMenuPalette, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
 }
 
 static void CreateCancelConfirmWindows(bool8 chooseHalf)
 {
-    u8 confirmWindowId;
-    u8 cancelWindowId;
-    u8 offset;
-    u8 mainOffset;
+    // u8 confirmWindowId;
+    // u8 cancelWindowId;
+    // u8 offset;
+    // u8 mainOffset;
 
     // Confirm/Cancel windows and text are disabled. The original logic is retained here (commented)
     // for future rework; it used AddWindow and AddTextPrinterParameterized* to draw the text inside small windows.
@@ -2848,7 +2872,7 @@ void DisplayPartyMenuStdMessage(u32 stringId)
             if (gPlayerPartyCount == 0)
                 stringId = PARTY_MSG_NO_POKEMON;
         }
-        DrawStdFrameWithCustomTileAndPalette(*windowPtr, FALSE, 0x4F, 13);
+        DrawStdFrameWithCustomTileAndPalette(*windowPtr, FALSE, 0x63, 13);
         StringExpandPlaceholders(gStringVar4, sActionStringTable[stringId]);
         AddTextPrinterParameterized(*windowPtr, FONT_NORMAL, gStringVar4, 0, 1, 0, 0);
         ScheduleBgCopyTilemapToVram(2);
@@ -2904,7 +2928,7 @@ static u8 DisplaySelectionWindow(u8 windowType)
     }
 
     sPartyMenuInternal->windowId[0] = AddWindow(&window);
-    DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[0], FALSE, 0x4F, 13);
+    DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[0], FALSE, 0x63, 13);
     if (windowType == SELECTWINDOW_MOVES)
         return sPartyMenuInternal->windowId[0];
     cursorDimension = GetMenuCursorDimensionByFont(FONT_NORMAL, 0);
@@ -2936,20 +2960,20 @@ static u8 DisplaySelectionWindow(u8 windowType)
 
 static void PrintMessage(const u8 *text)
 {
-    DrawStdFrameWithCustomTileAndPalette(WIN_MSG, FALSE, 0x4F, 13);
+    DrawStdFrameWithCustomTileAndPalette(WIN_MSG, FALSE, 0x63, 13);
     gTextFlags.canABSpeedUpPrint = TRUE;
     AddTextPrinterParameterized2(WIN_MSG, FONT_NORMAL, text, GetPlayerTextSpeedDelay(), 0, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
 }
 
 static void PartyMenuDisplayYesNoMenu(void)
 {
-    CreateYesNoMenu(&sPartyMenuYesNoWindowTemplate, 0x4F, 13, 0);
+    CreateYesNoMenu(&sPartyMenuYesNoWindowTemplate, 0x63, 13, 0);
 }
 
 static u8 CreateLevelUpStatsWindow(void)
 {
     sPartyMenuInternal->windowId[0] = AddWindow(&sLevelUpStatsWindowTemplate);
-    DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[0], FALSE, 0x4F, 13);
+    DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[0], FALSE, 0x63, 13);
     return sPartyMenuInternal->windowId[0];
 }
 
@@ -4876,7 +4900,7 @@ static void CreatePartyMonPokeballSpriteParameterized(u16 species, struct PartyM
 }
 
 // For Cancel when Confirm isnt present
-static u8 CreatePokeballButtonSprite(u8 x, u8 y)
+static u8 UNUSED CreatePokeballButtonSprite(u8 x, u8 y)
 {
     u8 spriteId = CreateSprite(&sSpriteTemplate_MenuPokeball, x, y, 8);
 
@@ -4885,7 +4909,7 @@ static u8 CreatePokeballButtonSprite(u8 x, u8 y)
 }
 
 // For Confirm and Cancel when both are present
-static u8 CreateSmallPokeballButtonSprite(u8 x, u8 y)
+static u8 UNUSED CreateSmallPokeballButtonSprite(u8 x, u8 y)
 {
     return CreateSprite(&sSpriteTemplate_MenuPokeballSmall, x, y, 8);
 }
