@@ -1439,7 +1439,7 @@ static u8 GetPartyBoxPaletteFlags(u8 slot, u8 animNum)
         palFlags |= PARTY_PAL_SWITCHING;
     if (gPartyMenu.action == PARTY_ACTION_SWITCH || gPartyMenu.action == PARTY_ACTION_MOVE_ITEM)
     {
-        if (slot == gPartyMenu.slotId || slot == gPartyMenu.slotId2)
+        if (slot == gPartyMenu.slotId) // only apply 'selected for action' pal to the original slot
             palFlags |= PARTY_PAL_TO_SWITCH;
     }
     if (gPartyMenu.action == PARTY_ACTION_SOFTBOILED && slot == gPartyMenu.slotId )
