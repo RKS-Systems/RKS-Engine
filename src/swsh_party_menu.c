@@ -255,7 +255,7 @@ static EWRAM_DATA u8 sInitialLevel = 0;
 static EWRAM_DATA u8 sFinalLevel = 0;
 static EWRAM_DATA u8 sHoverCursorSpriteId = 0;
 static EWRAM_DATA u8 sItemIconSpriteId = 0;
-static EWRAM_DATA u8 sSelectionFrameSpriteIds[7] = {0}; // Left + 5 middle + Right
+static EWRAM_DATA u8 sSelectFrameSpriteIds[7] = {0}; // Left + 5 middle + Right
 
 
 // IWRAM common
@@ -324,9 +324,9 @@ static void CreatePartyMonHoverSprite(struct PartyMenuBox *, u8);
 static void DestroyPartyMonHoverSprite(void);
 static void CreatePartyMonItemIconSprite(struct PartyMenuBox *, u8, u16);
 static void DestroyPartyMonItemIconSprite(void);
-static void LoadSelectionFrame(void);
-static void CreateSelectionFrame(struct PartyMenuBox *, u8);
-static void DestroySelectionFrame(void);
+static void LoadSelectFrame(void);
+static void CreateSelectFrame(struct PartyMenuBox *, u8);
+static void DestroySelectFrame(void);
 static u8 CreateSmallPokeballButtonSprite(u8, u8);
 static void DrawCancelConfirmButtons(void);
 static u8 CreatePokeballButtonSprite(u8, u8);
@@ -734,7 +734,7 @@ static bool8 ShowPartyMenu(void)
         break;
     case 12:
         // LoadPartyMenuPokeballGfx(); // Disabled - no longer using pokeball sprites
-        LoadSelectionFrame();
+        LoadSelectFrame();
         gMain.state++;
         break;
     case 13:
@@ -847,7 +847,7 @@ static bool8 ReloadPartyMenu(void)
         break;
     case 10:
         // LoadPartyMenuPokeballGfx(); // Disabled - no longer using pokeball sprites
-        LoadSelectionFrame();
+        LoadSelectFrame();
         gMain.state++;
         break;
     case 11:
@@ -1573,7 +1573,7 @@ static void HandleChooseMonSelection(u8 taskId, s8 *slotPtr)
             if (IsSelectedMonNotEgg((u8 *)slotPtr))
             {
                 PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
-                CreateSelectionFrame(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId); // TODO: review why this doesn't work
+                CreateSelectFrame(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId); // TODO: review why this doesn't work
                 Task_TryUseSoftboiledOnPartyMon(taskId);
             }
             break;
@@ -1715,7 +1715,7 @@ static void HandleChooseMonCancel(u8 taskId, s8 *slotPtr)
     case PARTY_ACTION_SOFTBOILED:
     case PARTY_ACTION_MOVE_ITEM:
         PlaySE(SE_SELECT);
-        DestroySelectionFrame();
+        DestroySelectFrame();
         FinishTwoMonAction(taskId);
         break;
     case PARTY_ACTION_MINIGAME:
@@ -2209,6 +2209,10 @@ static void Task_PartyMenuModifyHP(u8 taskId)
             ConvertIntToDecimalStringN(gStringVar2, tHP - tStartHP, STR_CONV_MODE_LEFT_ALIGN, 3);
 
         SwitchTaskToFollowupFunc(taskId);
+
+        // Handle destroying selection frame during Soft-boiled
+        if (gPartyMenu.action == PARTY_ACTION_SOFTBOILED)
+            DestroySelectFrame();
     }
 }
 
@@ -3380,7 +3384,7 @@ static void CursorCb_Switch(u8 taskId)
     DisplayPartyMenuStdMessage(PARTY_MSG_MOVE_TO_WHERE);
     AnimatePartySlot(gPartyMenu.slotId, 1);
     gPartyMenu.slotId2 = gPartyMenu.slotId;
-    CreateSelectionFrame(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
+    CreateSelectFrame(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
     gTasks[taskId].func = Task_HandleChooseMonInput;
 }
 
@@ -3402,7 +3406,7 @@ static void SwitchSelectedMons(u8 taskId)
     s16 *data = gTasks[taskId].data;
     u8 windowIds[2];
 
-    DestroySelectionFrame();
+    DestroySelectFrame();
     DestroyPartyMonHoverSprite();
 
     if (gPartyMenu.slotId2 == gPartyMenu.slotId)
@@ -5132,66 +5136,66 @@ static void UNUSED LoadPartyMenuPokeballGfx(void)
     */
 }
 
-static void LoadSelectionFrame(void)
+static void LoadSelectFrame(void)
 {
     u8 i;
     // Initialize sprite IDs to MAX_SPRITES
-    for (i = 0; i < ARRAY_COUNT(sSelectionFrameSpriteIds); i++)
-        sSelectionFrameSpriteIds[i] = MAX_SPRITES;
+    for (i = 0; i < ARRAY_COUNT(sSelectFrameSpriteIds); i++)
+        sSelectFrameSpriteIds[i] = MAX_SPRITES;
     
     LoadCompressedSpriteSheet(&sSpriteSheet_SelectFrame);
     LoadSpritePalette(&sSpritePal_SelectFrame);
 }
 
-static void DestroySelectionFrame(void)
+static void DestroySelectFrame(void)
 {
     u8 i;
-    for (i = 0; i < ARRAY_COUNT(sSelectionFrameSpriteIds); i++)
+    for (i = 0; i < ARRAY_COUNT(sSelectFrameSpriteIds); i++)
     {
-        if (sSelectionFrameSpriteIds[i] != MAX_SPRITES)
+        if (sSelectFrameSpriteIds[i] != MAX_SPRITES)
         {
-            DestroySprite(&gSprites[sSelectionFrameSpriteIds[i]]);
-            sSelectionFrameSpriteIds[i] = MAX_SPRITES;
+            DestroySprite(&gSprites[sSelectFrameSpriteIds[i]]);
+            sSelectFrameSpriteIds[i] = MAX_SPRITES;
         }
     }
 }
 
-static void CreateSelectionFrame(struct PartyMenuBox *menuBox, u8 slot)
+static void CreateSelectFrame(struct PartyMenuBox *menuBox, u8 slot)
 {
     u8 i;
     s16 x = menuBox->spriteCoords[0] - 10;
     s16 y = menuBox->spriteCoords[1] + 7;
     
-    DestroySelectionFrame();
+    DestroySelectFrame();
     
     // Left end
-    sSelectionFrameSpriteIds[0] = CreateSprite(&sSpriteTemplate_SelectFrame, x, y, 0);
-    if (sSelectionFrameSpriteIds[0] != MAX_SPRITES)
+    sSelectFrameSpriteIds[0] = CreateSprite(&sSpriteTemplate_SelectFrame, x, y, 0);
+    if (sSelectFrameSpriteIds[0] != MAX_SPRITES)
     {
-        StartSpriteAnim(&gSprites[sSelectionFrameSpriteIds[0]], 0); // Left
-        gSprites[sSelectionFrameSpriteIds[0]].oam.priority = 1;
-        gSprites[sSelectionFrameSpriteIds[0]].subpriority = 20;
+        StartSpriteAnim(&gSprites[sSelectFrameSpriteIds[0]], 0); // Left
+        gSprites[sSelectFrameSpriteIds[0]].oam.priority = 1;
+        gSprites[sSelectFrameSpriteIds[0]].subpriority = 20;
     }
     
     // Middle * 5
     for (i = 0; i < 5; i++)
     {
-        sSelectionFrameSpriteIds[1 + i] = CreateSprite(&sSpriteTemplate_SelectFrame, x + 16 + (i * 16), y, 0);
-        if (sSelectionFrameSpriteIds[1 + i] != MAX_SPRITES)
+        sSelectFrameSpriteIds[1 + i] = CreateSprite(&sSpriteTemplate_SelectFrame, x + 16 + (i * 16), y, 0);
+        if (sSelectFrameSpriteIds[1 + i] != MAX_SPRITES)
         {
-            StartSpriteAnim(&gSprites[sSelectionFrameSpriteIds[1 + i]], 2); // Middle
-            gSprites[sSelectionFrameSpriteIds[1 + i]].oam.priority = 1;
-            gSprites[sSelectionFrameSpriteIds[1 + i]].subpriority = 20;
+            StartSpriteAnim(&gSprites[sSelectFrameSpriteIds[1 + i]], 2); // Middle
+            gSprites[sSelectFrameSpriteIds[1 + i]].oam.priority = 1;
+            gSprites[sSelectFrameSpriteIds[1 + i]].subpriority = 20;
         }
     }
     
     // Right end
-    sSelectionFrameSpriteIds[6] = CreateSprite(&sSpriteTemplate_SelectFrame, x + 16 + (5 * 16), y, 0);
-    if (sSelectionFrameSpriteIds[6] != MAX_SPRITES)
+    sSelectFrameSpriteIds[6] = CreateSprite(&sSpriteTemplate_SelectFrame, x + 16 + (5 * 16), y, 0);
+    if (sSelectFrameSpriteIds[6] != MAX_SPRITES)
     {
-        StartSpriteAnim(&gSprites[sSelectionFrameSpriteIds[6]], 1); // Right
-        gSprites[sSelectionFrameSpriteIds[6]].oam.priority = 1;
-        gSprites[sSelectionFrameSpriteIds[6]].subpriority = 20;
+        StartSpriteAnim(&gSprites[sSelectFrameSpriteIds[6]], 1); // Right
+        gSprites[sSelectFrameSpriteIds[6]].oam.priority = 1;
+        gSprites[sSelectFrameSpriteIds[6]].subpriority = 20;
     }
 }
 
@@ -8889,7 +8893,7 @@ void CursorCb_MoveItemCallback(u8 taskId)
         AnimatePartySlot(gPartyMenu.slotId, 1);
 
         // return to the main party menu
-        DestroySelectionFrame();
+        DestroySelectFrame();
         ScheduleBgCopyTilemapToVram(2);
         CreatePartyMonHoverSprite(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
         gTasks[taskId].func = Task_UpdateHeldItemSprite;
@@ -8921,7 +8925,7 @@ void CursorCb_MoveItem(u8 taskId)
         if (sPartyMenuBoxes[gPartyMenu.slotId].itemSpriteId != MAX_SPRITES)
             gSprites[sPartyMenuBoxes[gPartyMenu.slotId].itemSpriteId].invisible = TRUE;
         
-        CreateSelectionFrame(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
+        CreateSelectFrame(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
         CreatePartyMonHoverSprite(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
 
         // set up callback
