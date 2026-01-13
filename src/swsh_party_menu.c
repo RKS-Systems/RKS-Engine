@@ -2726,12 +2726,47 @@ static void DisplayPartyPokemonGender(u8 gender, u16 species, u8 *nickname, stru
     }
 }
 
+// Mont note: because of how cramped together nickname, HP, and MaxHP are in the party menu boxes,
+// we clear and redraw both HP and MaxHP areas together to avoid visual glitches
+static void RedrawNicknameHPmaxHP(struct Pokemon *mon, struct PartyMenuBox *menuBox, bool8 redrawHp, bool8 redrawMaxHP)
+{
+    int left = menuBox->infoRects->dimensions[12];
+    int top = menuBox->infoRects->dimensions[13];
+    int right = left + menuBox->infoRects->dimensions[14] + 8;
+    int bottom = top + menuBox->infoRects->dimensions[15];
+
+    if (redrawMaxHP)
+    {
+        int mleft = menuBox->infoRects->dimensions[16];
+        int mtop = menuBox->infoRects->dimensions[17];
+        int mright = mleft + menuBox->infoRects->dimensions[18];
+        int mbottom = mtop + menuBox->infoRects->dimensions[19];
+
+        if (mleft < left) left = mleft;
+        if (mtop < top) top = mtop;
+        if (mright > right) right = mright;
+        if (mbottom > bottom) bottom = mbottom;
+    }
+
+    menuBox->infoRects->blitFunc(menuBox->windowId, left >> 3, top >> 3,
+                                 ((right - 1) >> 3) - (left >> 3) + 1,
+                                 ((bottom - 1) >> 3) - (top >> 3) + 1,
+                                 FALSE);
+
+    if (redrawMaxHP)
+        DisplayPartyPokemonMaxHP(GetMonData(mon, MON_DATA_MAX_HP), menuBox);
+    if (redrawHp)
+        DisplayPartyPokemonHP(GetMonData(mon, MON_DATA_HP), GetMonData(mon, MON_DATA_MAX_HP), menuBox);
+
+    DisplayPartyPokemonNickname(mon, menuBox, 0);
+}
+
 static void DisplayPartyPokemonHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
 {
     if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
     {
         if (c != 0)
-            menuBox->infoRects->blitFunc(menuBox->windowId, menuBox->infoRects->dimensions[12] >> 3, (menuBox->infoRects->dimensions[13] >> 3) + 1, menuBox->infoRects->dimensions[14] >> 3, menuBox->infoRects->dimensions[15] >> 3, FALSE);
+            RedrawNicknameHPmaxHP(mon, menuBox, FALSE, TRUE);
         if (c != 2)
             DisplayPartyPokemonHP(GetMonData(mon, MON_DATA_HP), GetMonData(mon, MON_DATA_MAX_HP), menuBox);
     }
@@ -2775,7 +2810,7 @@ static void DisplayPartyPokemonMaxHPCheck(struct Pokemon *mon, struct PartyMenuB
     if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
     {
         if (c != 0)
-            menuBox->infoRects->blitFunc(menuBox->windowId, (menuBox->infoRects->dimensions[16] >> 3) + 1, (menuBox->infoRects->dimensions[17] >> 3) + 1, menuBox->infoRects->dimensions[18] >> 3, menuBox->infoRects->dimensions[19] >> 3, FALSE);
+            RedrawNicknameHPmaxHP(mon, menuBox, TRUE, TRUE);
         if (c != 2)
             DisplayPartyPokemonMaxHP(GetMonData(mon, MON_DATA_MAX_HP), menuBox);
     }
@@ -2799,6 +2834,21 @@ static void DisplayPartyPokemonMaxHP(u16 maxhp, struct PartyMenuBox *menuBox)
     }
     else
         DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[16]);
+}
+
+// Update both HP and MaxHP together to avoid flickering (rare/exp candy use case, pretty much)
+static void DisplayPartyPokemonHPAndMaxHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
+{
+    if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
+    {
+        if (c != 0)
+            RedrawNicknameHPmaxHP(mon, menuBox, TRUE, TRUE);
+        if (c != 2)
+        {
+            DisplayPartyPokemonMaxHP(GetMonData(mon, MON_DATA_MAX_HP), menuBox);
+            DisplayPartyPokemonHP(GetMonData(mon, MON_DATA_HP), GetMonData(mon, MON_DATA_MAX_HP), menuBox);
+        }
+    }
 }
 
 static void DisplayPartyPokemonHPBarCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox)
@@ -6420,8 +6470,7 @@ static void UpdateMonDisplayInfoAfterRareCandy(u8 slot, struct Pokemon *mon)
     SetPartyMonAilmentGfx(mon, &sPartyMenuBoxes[slot]);
     if (gSprites[sPartyMenuBoxes[slot].statusSpriteId].invisible)
         DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[slot], 1);
-    DisplayPartyPokemonHPCheck(mon, &sPartyMenuBoxes[slot], 1);
-    DisplayPartyPokemonMaxHPCheck(mon, &sPartyMenuBoxes[slot], 1);
+    DisplayPartyPokemonHPAndMaxHPCheck(mon, &sPartyMenuBoxes[slot], 1);
     DisplayPartyPokemonHPBarCheck(mon, &sPartyMenuBoxes[slot]);
     UpdatePartyMonHPBar(sPartyMenuBoxes[slot].monSpriteId, mon);
     AnimatePartySlot(slot, 1);
