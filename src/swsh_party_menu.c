@@ -323,6 +323,7 @@ static void LoadPartyMonHoverCursor(void);
 static void CreatePartyMonHoverSprite(struct PartyMenuBox *, u8);
 static void DestroyPartyMonHoverSprite(void);
 static void CreatePartyMonItemIconSprite(struct PartyMenuBox *, u8, u16);
+static void CreatePartyMonItemMoveSprite(u8 fromSlot, u8 toSlot, u16 itemId);
 static void DestroyPartyMonItemIconSprite(void);
 static void LoadSelectFrame(void);
 static void CreateSelectFrame(struct PartyMenuBox *, u8);
@@ -5016,6 +5017,157 @@ static void CreatePartyMonHoverSprite(struct PartyMenuBox *menuBox, u8 slot)
     }
 }
 
+// Temp item sprite traveling from mon1 held-item position (fromSlot) to the mon2 (destSlot)
+// mon2 held item sprite is updated when the moving sprite finishes animation
+static void SpriteCB_ItemSwap(struct Sprite *sprite)
+{
+    if (++sprite->data[4] > sprite->data[5])
+    {
+        // Animation done
+        u8 destSlot = sprite->data[0];
+        // Recreate the item icon at the destination.
+        UpdatePartyMonHeldItemSprite(&gPlayerParty[destSlot], &sPartyMenuBoxes[destSlot]);
+        
+        FreeSpriteTilesByTag(sprite->data[6]);
+        FreeSpritePaletteByTag(sprite->data[6]);
+        DestroySprite(sprite);
+    }
+    else
+    {
+        s32 currentFrame = sprite->data[4];
+        s32 totalFrames = sprite->data[5];
+        s32 startX = sprite->data[2];
+        s32 startY = sprite->data[3];
+        s32 endX = sPartyMenuBoxes[sprite->data[0]].spriteCoords[2];
+        s32 endY = sPartyMenuBoxes[sprite->data[0]].spriteCoords[3];
+
+        // Linear interpolation
+        sprite->x = startX + (endX - startX) * currentFrame / totalFrames;
+        sprite->y = startY + (endY - startY) * currentFrame / totalFrames;
+
+        // Clockwise parabolic curve
+        // Vector (dx, dy) = End - Start
+        // Clockwise Perpendicular: (dy, -dx)
+        {
+            s32 dx = endX - startX;
+            s32 dy = endY - startY;
+            s32 perpX = dy; 
+            s32 perpY = -dx;
+            
+            s32 dist = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
+            s32 factor;
+
+            if (dist == 0) dist = 1; 
+
+            // Amplitude scales with distance: peak height is roughly 1/4 of distance
+            factor = (dist * currentFrame * (totalFrames - currentFrame)) / (totalFrames * totalFrames);
+            
+            sprite->x += (perpX * factor) / dist;
+            sprite->y += (perpY * factor) / dist;
+        }
+    }
+}
+
+static void InitItemSwapMotion(struct Sprite *sprite, u8 destSlot, u16 tag)
+{
+    int dx, dy;
+    
+    sprite->data[0] = destSlot;
+    // data[1] unused
+    sprite->data[2] = sprite->x;    // Start X
+    sprite->data[3] = sprite->y;    // Start Y
+    sprite->data[4] = 0;            // Current Frame
+    sprite->data[6] = tag;          // Store tag for cleanup
+
+    // Calc duration based on distance
+    dx = sPartyMenuBoxes[destSlot].spriteCoords[2] - sprite->x;
+    dy = sPartyMenuBoxes[destSlot].spriteCoords[3] - sprite->y;
+    if (dx < 0) dx = -dx;
+    if (dy < 0) dy = -dy;
+    
+    // Duration: 12 to 30 frames
+    sprite->data[5] = (dx + dy) / 8 + 12;
+    if (sprite->data[5] > 30) sprite->data[5] = 30;
+
+    sprite->callback = SpriteCB_ItemSwap;
+}
+
+static void CreatePartyMonItemMoveSprite(u8 fromSlot, u8 toSlot, u16 itemId)
+{    
+    // Animate tasks
+    // item1: mon1 (fromSlot) -> mon2 (toSlot)
+    // item2: mon2 (toSlot)   -> mon1 (fromSlot)
+    
+    // item2 is currently held by fromSlot (mon1) due to the previous data swap
+    u16 item2 = GetMonData(&gPlayerParty[fromSlot], MON_DATA_HELD_ITEM);
+    u16 item1 = itemId;
+
+    // 1. Reset from item sprite to hover cursor
+    DestroyPartyMonItemIconSprite();
+    sItemIconSpriteId = MAX_SPRITES;
+    
+    DestroyPartyMonHoverSprite(); 
+    // Create stationary cursor at fromSlot
+    sHoverCursorSpriteId = CreateSprite(&sSpriteTemplate_HoverCursor, 
+                                        sPartyMenuBoxes[fromSlot].spriteCoords[0] - 18, 
+                                        sPartyMenuBoxes[fromSlot].spriteCoords[1] + 3, 
+                                        0);
+    if (sHoverCursorSpriteId != MAX_SPRITES)
+    {
+        gSprites[sHoverCursorSpriteId].oam.priority = 1;
+        sPartyMenuInternal->cursorMoveSteps = 0;
+    }
+
+    // 2. Prep sprites
+    // clear existing specific icons before creating animation sprites to make sure
+    // UpdatePartyMonHeldItemSprite correctly loads NEW item graphics at anim end
+    if (sPartyMenuBoxes[fromSlot].itemSpriteId != MAX_SPRITES)
+    {
+        u16 tag = TAG_HELD_ITEM_ICON_BASE + fromSlot;
+        DestroySprite(&gSprites[sPartyMenuBoxes[fromSlot].itemSpriteId]);
+        FreeSpriteTilesByTag(tag);
+        FreeSpritePaletteByTag(tag);
+        sPartyMenuBoxes[fromSlot].itemSpriteId = MAX_SPRITES;
+    }
+    if (sPartyMenuBoxes[toSlot].itemSpriteId != MAX_SPRITES)
+    {
+        u16 tag = TAG_HELD_ITEM_ICON_BASE + toSlot;
+        DestroySprite(&gSprites[sPartyMenuBoxes[toSlot].itemSpriteId]);
+        FreeSpriteTilesByTag(tag);
+        FreeSpritePaletteByTag(tag);
+        sPartyMenuBoxes[toSlot].itemSpriteId = MAX_SPRITES;
+    }
+
+    // 3. Create anim sprites
+    // Sprite 1: item1 (mon1 -> mon2)
+    if (item1 != ITEM_NONE)
+    {
+        u8 spriteId = AddItemIconSprite(TAG_HOVER_CURSOR + 20, TAG_HOVER_CURSOR + 20, item1);
+        if (spriteId != MAX_SPRITES)
+        {
+            struct Sprite *sprite = &gSprites[spriteId];
+            sprite->x = sPartyMenuBoxes[fromSlot].spriteCoords[2];
+            sprite->y = sPartyMenuBoxes[fromSlot].spriteCoords[3];
+            sprite->oam.priority = 1;
+            InitItemSwapMotion(sprite, toSlot, TAG_HOVER_CURSOR + 20);
+        }
+    }
+
+    // Sprite 2: item2 (mon2 -> mon1)
+    if (item2 != ITEM_NONE)
+    {
+        u8 spriteId = AddItemIconSprite(TAG_HOVER_CURSOR + 21, TAG_HOVER_CURSOR + 21, item2);
+        if (spriteId != MAX_SPRITES)
+        {
+            struct Sprite *sprite = &gSprites[spriteId];
+            sprite->x = sPartyMenuBoxes[toSlot].spriteCoords[2];
+            sprite->y = sPartyMenuBoxes[toSlot].spriteCoords[3];
+            sprite->oam.priority = 1;
+            InitItemSwapMotion(sprite, fromSlot, TAG_HOVER_CURSOR + 21);
+        }
+    }
+}
+
 void DrawHeldItemIconsForTrade(u8 *partyCounts, u8 *partySpriteIds, u8 whichParty)
 {
     u16 i;
@@ -8861,9 +9013,30 @@ void CursorCb_MoveItemCallback(u8 taskId)
         TryItemHoldFormChange(&gPlayerParty[gPartyMenu.slotId], gPartyMenu.slotId);
         TryItemHoldFormChange(&gPlayerParty[gPartyMenu.slotId2], gPartyMenu.slotId2);
 
-        // update the held item icons
-        UpdatePartyMonHeldItemSprite(&gPlayerParty[gPartyMenu.slotId], &sPartyMenuBoxes[gPartyMenu.slotId]);
-        UpdatePartyMonHeldItemSprite(&gPlayerParty[gPartyMenu.slotId2], &sPartyMenuBoxes[gPartyMenu.slotId2]);
+        // Animate item swapping:
+        // - Hide both party mon held-item sprites during animation
+        // - Create moving sprite first, then update the destination's held item afterwards
+        if (item2 != ITEM_NONE)
+        {
+            // Hide item sprites
+            if (sPartyMenuBoxes[gPartyMenu.slotId].itemSpriteId != MAX_SPRITES)
+                gSprites[sPartyMenuBoxes[gPartyMenu.slotId].itemSpriteId].invisible = TRUE;
+            if (sPartyMenuBoxes[gPartyMenu.slotId2].itemSpriteId != MAX_SPRITES)
+                gSprites[sPartyMenuBoxes[gPartyMenu.slotId2].itemSpriteId].invisible = TRUE;
+
+            // Create moving sprite
+            CreatePartyMonItemMoveSprite(gPartyMenu.slotId2, gPartyMenu.slotId, item2);
+
+            // Update destination slot to show its new item (item1)
+            UpdatePartyMonHeldItemSprite(&gPlayerParty[gPartyMenu.slotId2], &sPartyMenuBoxes[gPartyMenu.slotId2]);
+            if (sPartyMenuBoxes[gPartyMenu.slotId2].itemSpriteId != MAX_SPRITES)
+                gSprites[sPartyMenuBoxes[gPartyMenu.slotId2].itemSpriteId].invisible = TRUE;
+        }
+        else
+        {
+            UpdatePartyMonHeldItemSprite(&gPlayerParty[gPartyMenu.slotId2], &sPartyMenuBoxes[gPartyMenu.slotId2]);
+            UpdatePartyMonHeldItemSprite(&gPlayerParty[gPartyMenu.slotId], &sPartyMenuBoxes[gPartyMenu.slotId]);
+        }
 
         // create the string describing the move
         if (item2 == ITEM_NONE)
