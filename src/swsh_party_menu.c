@@ -2127,8 +2127,17 @@ static s8 GetNewSlotDoubleLayout(s8 slotId, s8 movementDir)
 
 u8 *GetMonNickname(struct Pokemon *mon, u8 *dest)
 {
-    GetMonData(mon, MON_DATA_NICKNAME, dest);
-    return StringGet_Nickname(dest);
+    static const u8 sText_EggNickname[POKEMON_NAME_LENGTH + 1] = _("Egg");    
+    if (GetMonData(mon, MON_DATA_IS_EGG))
+    {
+        StringCopy(dest, sText_EggNickname);
+        return dest;
+    }
+    else
+    {
+        GetMonData(mon, MON_DATA_NICKNAME, dest);
+        return StringGet_Nickname(dest);
+    }
 }
 
 #define tKeepOpen  data[0]
@@ -5452,7 +5461,7 @@ static void SetPartyMonAilmentGfx(struct Pokemon *mon, struct PartyMenuBox *menu
 
 static u8 LoadMonGfxAndSprite(struct Pokemon *mon, s16 *state, bool32 isShadow)
 {
-    u16 species = GetMonData(mon, MON_DATA_SPECIES);
+    u16 species = GetMonData(mon, MON_DATA_SPECIES_OR_EGG);
     u32 pid = GetMonData(mon, MON_DATA_PERSONALITY);
     bool8 isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
 
@@ -5490,10 +5499,11 @@ static u8 LoadMonGfxAndSprite(struct Pokemon *mon, s16 *state, bool32 isShadow)
 #define sDontFlip data[1]
 #define sDelayAnim data[2]
 #define sIsShadow data[3]
+#define sIsEgg data[4]      // for passing into onFrame in PokemonSummaryDoMonAnimation
 
 static u8 CreateMonSprite(struct Pokemon *mon, bool32 isShadow)
 {
-    u16 species = GetMonData(mon, MON_DATA_SPECIES);
+    u16 species = GetMonData(mon, MON_DATA_SPECIES_OR_EGG);
     u8 shadowPalette = 0;
     u8 spriteId = CreateSprite(&gMultiuseSpriteTemplate, 184, 74, 5);
 
@@ -5503,6 +5513,7 @@ static u8 CreateMonSprite(struct Pokemon *mon, bool32 isShadow)
         gSprites[spriteId].sSpecies = species;
         gSprites[spriteId].sDelayAnim = 0;
         gSprites[spriteId].sIsShadow = isShadow;
+        gSprites[spriteId].sIsEgg = GetMonData(mon, MON_DATA_IS_EGG);
         gSprites[spriteId].oam.priority = 1;
         if (isShadow)
         {
@@ -5553,8 +5564,8 @@ static void SpriteCB_PartyMonPokemon(struct Sprite *sprite)
     if (!gPaletteFade.active && sprite->sDelayAnim != 1)
     {
         sprite->sDontFlip = TRUE;
-        PokemonSummaryDoMonAnimation(sprite, sprite->sSpecies, FALSE);
-        // PokemonSummaryDoMonAnimation(sprite, sprite->sSpecies, FALSE, sprite->sIsShadow); // use this if already using swsh_summary_screen branch
+        PokemonSummaryDoMonAnimation(sprite, sprite->sSpecies, sprite->sIsEgg);
+        // PokemonSummaryDoMonAnimation(sprite, sprite->sSpecies, sprite->sIsEgg, sprite->sIsShadow); // use this if already using swsh_summary_screen branch
     }
 }
 
@@ -5583,13 +5594,15 @@ static void RunMonAnimTimer(void)
         }
 
         // Restore species and shadow flags for both sprites
-        gSprites[sMonSpriteId].sSpecies = GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES);
+        gSprites[sMonSpriteId].sSpecies = GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES_OR_EGG);
         gSprites[sMonSpriteId].sIsShadow = FALSE;
+        gSprites[sMonSpriteId].sIsEgg = GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_IS_EGG);
         
         if (sMonShadowSpriteId != SPRITE_NONE)
         {
-            gSprites[sMonShadowSpriteId].sSpecies = GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES);
+            gSprites[sMonShadowSpriteId].sSpecies = GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES_OR_EGG);
             gSprites[sMonShadowSpriteId].sIsShadow = TRUE;
+            gSprites[sMonShadowSpriteId].sIsEgg = GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_IS_EGG);
         }
 
         // Restart animation for both sprites
@@ -5605,6 +5618,7 @@ static void RunMonAnimTimer(void)
 #undef sDontFlip
 #undef sDelayAnim
 #undef sIsShadow
+#undef sIsEgg
 
 static void UpdatePartyMonAilmentGfx(u8 status, struct PartyMenuBox *menuBox)
 {
