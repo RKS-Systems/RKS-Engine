@@ -3,10 +3,27 @@ static const u16 sPartyMenuBg_Pal_SwSh[]            = INCBIN_U16("graphics/party
 static const u32 sPartyMenuBg_Main_Tilemap_SwSh[]   = INCBIN_U32("graphics/party_menu/swsh/bg_main.bin.smolTM");
 static const u32 sPartyMenuBg_Scroll_Tilemap_SwSh[] = INCBIN_U32("graphics/party_menu/swsh/bg_scroll.bin.smolTM");
 
+enum {
+    BUTTON_START,
+};
+
+static const u8 sButtons_Gfx[][4 * TILE_SIZE_4BPP] = {
+    [BUTTON_START] = INCBIN_U8("graphics/party_menu/swsh/start_button.4bpp"),
+};
+
+static const struct OamData sOamData_Button = {
+    .size = SPRITE_SIZE(32x8),
+    .shape = SPRITE_SHAPE(32x8),
+    .priority = 0,
+};
+
 #if SWSH_PARTY_MENU == TRUE
 static const u32 sStatusGfx_Icons_SwSh[] = INCBIN_U32("graphics/party_menu/swsh/status_icons.4bpp.smol");
 static const u16 sStatusPal_Icons_SwSh[] = INCBIN_U16("graphics/party_menu/swsh/status_icons.gbapal");
 #endif
+
+static const u8 sText_EggNickname[POKEMON_NAME_LENGTH + 1]  = _("Egg");
+static const u8 sMenuText_Confirm[]                         = _("Confirm");
 
 static const struct BgTemplate sPartyMenuBgTemplates[] =
 {
@@ -417,6 +434,8 @@ static const struct WindowTemplate sShowcaseMultiPartyMenuWindowTemplate[] =
     DUMMY_WIN_TEMPLATE
 };
 
+#define PARTY_LABEL_WINDOW_PROMPT 7
+
 static const struct WindowTemplate sSinglePartyMenuWindowTemplate_SwSh[] =
 {
     { // Party mon 1
@@ -481,6 +500,15 @@ static const struct WindowTemplate sSinglePartyMenuWindowTemplate_SwSh[] =
         .height = 4,
         .paletteNum = 14,
         .baseBlock = 0x16B,
+    },
+    [PARTY_LABEL_WINDOW_PROMPT] = {
+        .bg = 0,
+        .tilemapLeft = 16,
+        .tilemapTop = 18,
+        .width = 14,
+        .height = 2,
+        .paletteNum = 0,
+        .baseBlock = 0x1F0,
     },
     DUMMY_WIN_TEMPLATE
 };

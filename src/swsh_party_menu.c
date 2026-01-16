@@ -219,6 +219,7 @@ struct PartyMenuInternal
     bool8 inItemMode;
 
     u8 windowId[3];
+    u8 promptWindowId;
     u8 actions[8];
     u8 numActions;
     // In vanilla Emerald, only the first 0xB0 hwords (0x160 bytes) are actually used.
@@ -284,8 +285,8 @@ static void LoadPartyMenuBoxes(u8);
 static void UNUSED LoadPartyMenuPokeballGfx(void);
 static bool8 CreatePartyMonSpritesLoop(void);
 static bool8 RenderPartyMenuBoxes(void);
-static void CreateCancelConfirmPokeballSprites(void);
-static void CreateCancelConfirmWindows(u8);
+static void UNUSED CreateCancelConfirmPokeballSprites(void);
+static void UNUSED CreateCancelConfirmWindows(u8);
 static void Task_ExitPartyMenu(u8);
 static void FreePartyPointers(void);
 static u8 LoadMonGfxAndSprite(struct Pokemon *mon, s16 *state, bool32 isShadow);
@@ -366,6 +367,11 @@ static void TryGiveItemOrMailToSelectedMon(u8);
 static void SwitchSelectedMons(u8);
 static void TryEnterMonForMinigame(u8, u8);
 static void Task_TryCreateSelectionWindow(u8);
+static void ShowConfirmPrompt(void);
+static void UNUSED ClearConfirmPrompt(void);
+static inline bool32 ShouldShowConfirm(void);
+static void PrintButtonIcon(u8 windowId, u8 buttonType, u32 x, u32 y);
+static void PrintTextOnWindowWithFont(u8 windowId, const u8 *string, u8 x, u8 y, u8 lineSpacing, u8 colorId, u32 fontId);
 static void FinishTwoMonAction(u8);
 static void CancelParticipationPrompt(u8);
 static bool8 DisplayCancelChooseMonYesNo(u8);
@@ -782,11 +788,15 @@ static bool8 ShowPartyMenu(void)
         }
         break;
     case 18:
-        CreateCancelConfirmPokeballSprites();
         gMain.state++;
         break;
     case 19:
-        CreateCancelConfirmWindows(sPartyMenuInternal->chooseHalf);
+        if (ShouldShowConfirm() && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
+        {
+            ShowConfirmPrompt();
+            PutWindowTilemap(sPartyMenuInternal->promptWindowId);
+            ScheduleBgCopyTilemapToVram(0);
+        }
         gMain.state++;
         break;
     case 20:
@@ -922,11 +932,15 @@ static bool8 ReloadPartyMenu(void)
         }
         break;
     case 16:
-        CreateCancelConfirmPokeballSprites();
         gMain.state++;
         break;
     case 17:
-        CreateCancelConfirmWindows(sPartyMenuInternal->chooseHalf);
+        if (ShouldShowConfirm() && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
+        {
+            ShowConfirmPrompt();
+            PutWindowTilemap(sPartyMenuInternal->promptWindowId);
+            ScheduleBgCopyTilemapToVram(0);
+        }
         gMain.state++;
         break;
     case 18:
@@ -1403,7 +1417,7 @@ static bool8 CreatePartyMonSpritesLoop(void)
         return FALSE;
 }
 
-static void CreateCancelConfirmPokeballSprites(void)
+static void UNUSED CreateCancelConfirmPokeballSprites(void)
 {
     // Confirm/Cancel visuals disabled: buttons and pokeball sprites are intentionally not created.
     // The original implementation (left commented) created BG tiles, windows, and sprites for Confirm/Cancel.
@@ -2127,7 +2141,6 @@ static s8 GetNewSlotDoubleLayout(s8 slotId, s8 movementDir)
 
 u8 *GetMonNickname(struct Pokemon *mon, u8 *dest)
 {
-    static const u8 sText_EggNickname[POKEMON_NAME_LENGTH + 1] = _("Egg");    
     if (GetMonData(mon, MON_DATA_IS_EGG))
     {
         StringCopy(dest, sText_EggNickname);
@@ -2518,12 +2531,87 @@ static void LoadPartyMenuWindows(void)
     DeactivateAllTextPrinters();
     for (i = 0; i < PARTY_SIZE; i++)
         FillWindowPixelBuffer(i, PIXEL_FILL(0));
+
+    if (gPartyMenu.layout == PARTY_LAYOUT_SINGLE)
+    {
+        sPartyMenuInternal->promptWindowId = PARTY_LABEL_WINDOW_PROMPT;
+        FillWindowPixelBuffer(PARTY_LABEL_WINDOW_PROMPT, PIXEL_FILL(0));
+        CopyWindowToVram(PARTY_LABEL_WINDOW_PROMPT, COPYWIN_GFX);
+    }
+    else
+    {
+        sPartyMenuInternal->promptWindowId = WINDOW_NONE;
+    }
     LoadUserWindowBorderGfx(0, 0x63, BG_PLTT_ID(13));
     LoadPalette(GetOverworldTextboxPalettePtr(), BG_PLTT_ID(14), PLTT_SIZE_4BPP);
     LoadPalette(gStandardMenuPalette, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
 }
 
-static void CreateCancelConfirmWindows(bool8 chooseHalf)
+static void PrintButtonIcon(u8 windowId, u8 buttonType, u32 x, u32 y)
+{
+    static const struct {
+        u8 width;
+        u8 height;
+    } sButtonDimensions[] = {
+        [BUTTON_START]  = {32, 8},
+    };
+
+    const u8 *button = NULL;
+    u8 width = 0;
+    u8 height = 0;
+
+    if (buttonType <= BUTTON_START)
+    {
+        button = sButtons_Gfx[buttonType];
+        width = sButtonDimensions[buttonType].width;
+        height = sButtonDimensions[buttonType].height;
+    }
+
+    if (button == NULL || width == 0 || height == 0)
+        return;
+
+    BlitBitmapToWindow(windowId, button, x, y, width, height);
+}
+
+static void PrintTextOnWindowWithFont(u8 windowId, const u8 *string, u8 x, u8 y, u8 lineSpacing, u8 colorId, u32 fontId)
+{
+    AddTextPrinterParameterized4(windowId, fontId, x, y, 0, lineSpacing, sFontColorTable[colorId], 0, string);
+}
+
+static inline bool32 ShouldShowConfirm(void)
+{
+    return (sPartyMenuInternal->chooseHalf == TRUE);
+}
+
+static void ShowConfirmPrompt(void)
+{
+    if (ShouldShowConfirm() && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
+    {
+        u8 promptWindowId = sPartyMenuInternal->promptWindowId;
+
+        int stringXPos = GetStringRightAlignXOffset(FONT_SHORT_NARROW, sMenuText_Confirm, 104);
+        int iconXPos = stringXPos - 31; // START button offset
+        if (iconXPos < 0)
+            iconXPos = 0;
+
+        PrintButtonIcon(promptWindowId, BUTTON_START, iconXPos, 4);
+        PrintTextOnWindowWithFont(promptWindowId, sMenuText_Confirm, stringXPos, 0, 0, 5, FONT_SMALL);
+        CopyWindowToVram(promptWindowId, COPYWIN_GFX);
+    }
+}  
+
+static void UNUSED ClearConfirmPrompt(void)
+{
+    if (sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
+    {
+        FillWindowPixelBuffer(sPartyMenuInternal->promptWindowId, PIXEL_FILL(0));
+        ClearWindowTilemap(sPartyMenuInternal->promptWindowId);
+        sPartyMenuInternal->promptWindowId = WINDOW_NONE;
+        ScheduleBgCopyTilemapToVram(0);
+    }
+} 
+
+static void UNUSED CreateCancelConfirmWindows(bool8 chooseHalf)
 {
     // u8 confirmWindowId;
     // u8 cancelWindowId;
@@ -5074,6 +5162,14 @@ static void DestroyPartyMonItemIconSprite(void)
 
 static void CreatePartyMonHoverSprite(struct PartyMenuBox *menuBox, u8 slot)
 {
+    // Do not show hover cursor in MULTI_SHOWCASE
+    if (gPartyMenu.menuType == PARTY_MENU_TYPE_MULTI_SHOWCASE)
+    {
+        DestroyPartyMonHoverSprite();
+        DestroyPartyMonItemIconSprite();
+        return;
+    }
+
     // When using or giving an item, show the item icon instead of the select cursor
     if ((gPartyMenu.action == PARTY_ACTION_USE_ITEM || gPartyMenu.action == PARTY_ACTION_GIVE_ITEM || gPartyMenu.action == PARTY_ACTION_MOVE_ITEM) 
         && gSpecialVar_ItemId != ITEM_NONE)
