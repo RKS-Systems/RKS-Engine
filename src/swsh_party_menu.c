@@ -242,6 +242,12 @@ struct PartyMenuBox
     u8 statusSpriteId;
 };
 
+enum {
+    BUTTON_PROMPT_NONE,
+    BUTTON_PROMPT_CONFIRM,
+    BUTTON_PROMPT_BOXES,
+};
+
 // EWRAM vars
 static EWRAM_DATA struct PartyMenuInternal *sPartyMenuInternal = NULL;
 EWRAM_DATA struct PartyMenu gPartyMenu = {0};
@@ -376,9 +382,9 @@ static void TryGiveItemOrMailToSelectedMon(u8);
 static void SwitchSelectedMons(u8);
 static void TryEnterMonForMinigame(u8, u8);
 static void Task_TryCreateSelectionWindow(u8);
-static void ShowConfirmPrompt(void);
+static inline u8 GetButtonPromptType(void);
+static void ShowButtonPrompt(u8 type);
 static void UNUSED ClearConfirmPrompt(void);
-static inline bool32 ShouldShowConfirm(void);
 static void PrintButtonIcon(u8 windowId, u8 buttonType, u32 x, u32 y);
 static void PrintTextOnWindowWithFont(u8 windowId, const u8 *string, u8 x, u8 y, u8 lineSpacing, u8 colorId, u32 fontId);
 static void FinishTwoMonAction(u8);
@@ -802,11 +808,14 @@ static bool8 ShowPartyMenu(void)
         gMain.state++;
         break;
     case 19:
-        if (ShouldShowConfirm() && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
         {
-            ShowConfirmPrompt();
-            PutWindowTilemap(sPartyMenuInternal->promptWindowId);
-            ScheduleBgCopyTilemapToVram(0);
+            u8 promptType = GetButtonPromptType();
+            if (promptType != BUTTON_PROMPT_NONE && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
+            {
+                ShowButtonPrompt(promptType);
+                PutWindowTilemap(sPartyMenuInternal->promptWindowId);
+                ScheduleBgCopyTilemapToVram(0);
+            }
         }
         gMain.state++;
         break;
@@ -946,11 +955,14 @@ static bool8 ReloadPartyMenu(void)
         gMain.state++;
         break;
     case 17:
-        if (ShouldShowConfirm() && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
         {
-            ShowConfirmPrompt();
-            PutWindowTilemap(sPartyMenuInternal->promptWindowId);
-            ScheduleBgCopyTilemapToVram(0);
+            u8 promptType = GetButtonPromptType();
+            if (promptType != BUTTON_PROMPT_NONE && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
+            {
+                ShowButtonPrompt(promptType);
+                PutWindowTilemap(sPartyMenuInternal->promptWindowId);
+                ScheduleBgCopyTilemapToVram(0);
+            }
         }
         gMain.state++;
         break;
@@ -1653,14 +1665,14 @@ void Task_HandleChooseMonInput(u8 taskId)
                 // MoveCursorToConfirm();
                 gPartyMenu.task(taskId);
             }
-            else if (gPartyMenu.action == PARTY_ACTION_CHOOSE_MON && gPartyMenu.layout == PARTY_LAYOUT_SINGLE
-                     && (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD || gPartyMenu.menuType == PARTY_MENU_TYPE_DAYCARE))
+            break;
+        case R_BUTTON:
+            if (gPartyMenu.action == PARTY_ACTION_CHOOSE_MON && gPartyMenu.layout == PARTY_LAYOUT_SINGLE
+                && (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD || gPartyMenu.menuType == PARTY_MENU_TYPE_DAYCARE))
             {
                 PlaySE(SE_SELECT);
-
                 SavePartyMenuStateForPC();
                 PokemonPC_SetReturnToPartyCallback(CB2_ReopenPartyMenuFromPC);
-                
                 sPartyMenuInternal->exitCallback = CB2_ShowPokemonPCFromParty;
                 PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
                 Task_ClosePartyMenu(taskId);
@@ -1926,20 +1938,12 @@ static u16 PartyMenuButtonHandler(s8 *slotPtr)
         movementDir = MENU_DIR_RIGHT;
         break;
     default:
-        switch (GetLRKeysPressedAndHeld())
-        {
-        case MENU_L_PRESSED:
-            movementDir = MENU_DIR_UP;
-            break;
-        case MENU_R_PRESSED:
-            movementDir = MENU_DIR_DOWN;
-            break;
-        default:
-            movementDir = 0;
-            break;
-        }
+        movementDir = 0;
         break;
     }
+
+    if (JOY_NEW(R_BUTTON))
+        return R_BUTTON;
 
     if (JOY_NEW(START_BUTTON))
         return START_BUTTON;
@@ -2602,13 +2606,14 @@ static void PrintButtonIcon(u8 windowId, u8 buttonType, u32 x, u32 y)
         u8 height;
     } sButtonDimensions[] = {
         [BUTTON_START]  = {32, 8},
+        [BUTTON_R]      = {16, 8},
     };
 
     const u8 *button = NULL;
     u8 width = 0;
     u8 height = 0;
 
-    if (buttonType <= BUTTON_START)
+    if (buttonType <= BUTTON_R)
     {
         button = sButtons_Gfx[buttonType];
         width = sButtonDimensions[buttonType].width;
@@ -2626,26 +2631,47 @@ static void PrintTextOnWindowWithFont(u8 windowId, const u8 *string, u8 x, u8 y,
     AddTextPrinterParameterized4(windowId, fontId, x, y, 0, lineSpacing, sFontColorTable[colorId], 0, string);
 }
 
-static inline bool32 ShouldShowConfirm(void)
+static inline u8 GetButtonPromptType(void)
 {
-    return (sPartyMenuInternal->chooseHalf == TRUE);
+    if (sPartyMenuInternal != NULL && sPartyMenuInternal->chooseHalf == TRUE)
+        return BUTTON_PROMPT_CONFIRM;
+
+    if (gPartyMenu.action == PARTY_ACTION_CHOOSE_MON && gPartyMenu.layout == PARTY_LAYOUT_SINGLE
+        && (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD || gPartyMenu.menuType == PARTY_MENU_TYPE_DAYCARE))
+        return BUTTON_PROMPT_BOXES;
+
+    return BUTTON_PROMPT_NONE;
 }
 
-static void ShowConfirmPrompt(void)
+static const struct {
+    u8 iconType;
+    u8 iconOffset;
+    const u8 *text;
+} sPromptButtonInfo[] = {
+    [BUTTON_PROMPT_NONE]    = {BUTTON_NONE,  30,              NULL},
+    [BUTTON_PROMPT_CONFIRM] = {BUTTON_START, 30, sMenuText_Confirm},
+    [BUTTON_PROMPT_BOXES]   = {BUTTON_R,     18,   sMenuText_Boxes},
+};
+
+static void ShowButtonPrompt(u8 type)
 {
-    if (ShouldShowConfirm() && sPartyMenuInternal != NULL && sPartyMenuInternal->promptWindowId != WINDOW_NONE)
-    {
-        u8 promptWindowId = sPartyMenuInternal->promptWindowId;
+    if (type == BUTTON_PROMPT_NONE || sPartyMenuInternal == NULL || sPartyMenuInternal->promptWindowId == WINDOW_NONE)
+        return;
 
-        int stringXPos = GetStringRightAlignXOffset(FONT_SHORT_NARROW, sMenuText_Confirm, 104);
-        int iconXPos = stringXPos - 31; // START button offset
-        if (iconXPos < 0)
-            iconXPos = 0;
+    u8 promptWindowId = sPartyMenuInternal->promptWindowId;
+    const u8 *text = sPromptButtonInfo[type].text;
 
-        PrintButtonIcon(promptWindowId, BUTTON_START, iconXPos, 4);
-        PrintTextOnWindowWithFont(promptWindowId, sMenuText_Confirm, stringXPos, 0, 0, 5, FONT_SMALL);
-        CopyWindowToVram(promptWindowId, COPYWIN_GFX);
-    }
+    if (text == NULL)
+        return;
+
+    int stringXPos = GetStringRightAlignXOffset(FONT_SMALL, text, 104);
+    const u8 iconType = sPromptButtonInfo[type].iconType;
+    int iconXPos = stringXPos - sPromptButtonInfo[type].iconOffset;
+    if (iconXPos < 0)
+        iconXPos = 0;
+    PrintButtonIcon(promptWindowId, iconType, iconXPos, 4);
+    PrintTextOnWindowWithFont(promptWindowId, text, stringXPos, 0, 0, 5, FONT_SMALL);
+    CopyWindowToVram(promptWindowId, COPYWIN_GFX);
 }
 
 static void UNUSED ClearConfirmPrompt(void)
