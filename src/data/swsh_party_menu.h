@@ -5,13 +5,17 @@ static const u32 sPartyMenuBg_Scroll_Tilemap_SwSh[] = INCBIN_U32("graphics/party
 
 enum {
     BUTTON_START,
+    BUTTON_SELECT,
+    BUTTON_L,
     BUTTON_R,
     BUTTON_NONE = 0xFF,
 };
 
 static const u8 sButtons_Gfx[][4 * TILE_SIZE_4BPP] = {
-    [BUTTON_START] = INCBIN_U8("graphics/party_menu/swsh/start_button.4bpp"),
-    [BUTTON_R]     = INCBIN_U8("graphics/party_menu/swsh/r_button.4bpp"),
+    [BUTTON_START]  = INCBIN_U8("graphics/party_menu/swsh/start_button.4bpp"),
+    [BUTTON_SELECT] = INCBIN_U8("graphics/party_menu/swsh/select_button.4bpp"),
+    [BUTTON_L]      = INCBIN_U8("graphics/party_menu/swsh/l_button.4bpp"),
+    [BUTTON_R]      = INCBIN_U8("graphics/party_menu/swsh/r_button.4bpp"),
 };
 
 static const struct OamData sOamData_Button = {
@@ -27,6 +31,7 @@ static const u16 sStatusPal_Icons_SwSh[] = INCBIN_U16("graphics/party_menu/swsh/
 
 static const u8 sText_EggNickname[POKEMON_NAME_LENGTH + 1]  = _("Egg");
 static const u8 sMenuText_Confirm[]                         = _("Confirm");
+static const u8 sMenuText_Switch[]                          = _("Switch");
 static const u8 sMenuText_Boxes[]                           = _("Boxes");
 
 static const struct BgTemplate sPartyMenuBgTemplates[] =
