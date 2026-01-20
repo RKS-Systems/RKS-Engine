@@ -925,6 +925,17 @@ static const struct WindowTemplate sMoveInfoWindowTemplate_SwSh[] =
     },
 };
 
+static const struct WindowTemplate sAbilityInfoWindowTemplate =
+{
+    .bg = 0,
+    .tilemapLeft = 17,
+    .tilemapTop = 11,
+    .width = 13,
+    .height = 4,
+    .paletteNum = 0,
+    .baseBlock = 0x3A7,
+};
+
 static const struct WindowTemplate sUnusedWindowTemplate1 =
 {
     .bg = 2,
@@ -961,6 +972,7 @@ static const u8 sSlotTilemap_Empty_SwSh[] = INCBIN_U8("graphics/party_menu/swsh/
 // Plain tilemaps for move slots
 static const u8 sMoveTilemap_Main_SwSh[]  = INCBIN_U8("graphics/party_menu/swsh/move.bin");
 static const u8 sMoveTilemap_Empty_SwSh[] = INCBIN_U8("graphics/party_menu/swsh/move_empty.bin");
+static const u8 sAbilityTilemap_SwSh[]    = INCBIN_U8("graphics/party_menu/swsh/ability_box.bin");
 
 // Palette offsets
 static const u8 sGenderPalOffsets[] = {11, 12};

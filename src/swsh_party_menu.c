@@ -277,6 +277,7 @@ static EWRAM_DATA u8 sItemIconSpriteId = 0;
 static EWRAM_DATA u8 sSelectFrameSpriteIds[7] = {0}; // Left + 5 middle + Right
 static EWRAM_DATA u8 sMonSpriteId = 0;
 static EWRAM_DATA u8 sMoveWindowIds[MAX_MON_MOVES];
+static EWRAM_DATA u8 sAbilityWindowId;
 static EWRAM_DATA u8 sMonShadowSpriteId = 0;
 static EWRAM_DATA u16 sMonAnimTimer = 0;
 // Saved party menu state for reopening after opening the PC Move Pokémon UI
@@ -375,6 +376,7 @@ static u8 GetPartyIdFromBattleSlot(u8);
 static void BlitBitmapToPartyMoveWindow_SwSh(u8, u8, u8, u8, u8, bool8);
 static void UpdatePartyMoveWindows(u8);
 static void DisplayPartyPokemonMoves(u8, struct Pokemon *, int);
+static void DisplayPartyPokemonAbility(u8, u8);
 static u8 *GetPartyMenuBgTile(u16);
 static void Task_ClosePartyMenuAndSetCB2(u8);
 static void UpdatePartyToFieldOrder(void);
@@ -1032,6 +1034,7 @@ static void ResetPartyMenu(void)
         sSelectFrameSpriteIds[i] = MAX_SPRITES;
     for (i = 0; i < MAX_MON_MOVES; ++i)
         sMoveWindowIds[i] = WINDOW_NONE;
+    sAbilityWindowId = WINDOW_NONE;
 }
 
 static bool8 AllocPartyMenuBg(void)
@@ -1291,6 +1294,38 @@ static void UpdatePartyMoveWindows(u8 slot)
         }
         CopyWindowToVram(sMoveWindowIds[m], COPYWIN_GFX);
     }
+    if (sAbilityWindowId != WINDOW_NONE)
+        DisplayPartyPokemonAbility(sAbilityWindowId, slot);
+}
+
+static void DisplayPartyPokemonAbility(u8 windowId, u8 slot)
+{
+    if (windowId == WINDOW_NONE)
+        return;
+
+    u8 abilityNum;
+    u16 species;
+    enum Ability ability;
+    const u8 *name;
+    int x;
+    int y = 16;
+
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
+    BlitBitmapToPartyWindow(windowId, sAbilityTilemap_SwSh, 13, 0, 0, 13, 4);
+
+    {
+        struct Pokemon *mon = &gPlayerParty[slot];
+        if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE && !GetMonData(mon, MON_DATA_IS_EGG))
+        {
+            abilityNum = GetMonData(mon, MON_DATA_ABILITY_NUM);
+            species = GetMonData(mon, MON_DATA_SPECIES);
+            ability = GetAbilityBySpecies(species, abilityNum);
+            name = gAbilitiesInfo[ability].name;
+            x = GetStringCenterAlignXOffset(FONT_SMALL, name, 104);
+            AddTextPrinterParameterized3(windowId, FONT_SMALL, x, y, sFontColorTable[9], 0, name);
+        }
+    }
+    CopyWindowToVram(windowId, COPYWIN_GFX);
 }
 
 static void DisplayPartyPokemonDataForChooseHalf(u8 slot)
@@ -2699,6 +2734,12 @@ static void LoadPartyMenuWindows(void)
                 PutWindowTilemap(sMoveWindowIds[i]);
                 CopyWindowToVram(sMoveWindowIds[i], COPYWIN_GFX);
             }
+        }
+        sAbilityWindowId = AddWindow(&sAbilityInfoWindowTemplate);
+        if (sAbilityWindowId != WINDOW_NONE)
+        {
+            PutWindowTilemap(sAbilityWindowId);
+            DisplayPartyPokemonAbility(sAbilityWindowId, gPartyMenu.slotId);
         }
         UpdatePartyMoveWindows(gPartyMenu.slotId);
     }
