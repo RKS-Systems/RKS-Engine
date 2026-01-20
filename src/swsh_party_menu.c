@@ -2692,7 +2692,7 @@ static void LoadPartyMenuWindows(void)
         int i;
         for (i = 0; i < MAX_MON_MOVES; ++i)
         {
-            sMoveWindowIds[i] = AddWindow(&sMovePartyMenuWindowTemplate_SwSh[i]);
+            sMoveWindowIds[i] = AddWindow(&sMoveInfoWindowTemplate_SwSh[i]);
             if (sMoveWindowIds[i] != WINDOW_NONE)
             {
                 FillWindowPixelBuffer(sMoveWindowIds[i], PIXEL_FILL(0));
@@ -3428,19 +3428,19 @@ void DisplayPartyMenuStdMessage(u32 stringId)
     {
         switch (stringId)
         {
-        case PARTY_MSG_DO_WHAT_WITH_MON:
-            *windowPtr = AddWindow(&sDoWhatWithMonMsgWindowTemplate);
-            break;
-        case PARTY_MSG_DO_WHAT_WITH_ITEM:
-            *windowPtr = AddWindow(&sDoWhatWithItemMsgWindowTemplate);
-            break;
-        case PARTY_MSG_DO_WHAT_WITH_MAIL:
-            *windowPtr = AddWindow(&sDoWhatWithMailMsgWindowTemplate);
-            break;
-        case PARTY_MSG_RESTORE_WHICH_MOVE:
-        case PARTY_MSG_BOOST_PP_WHICH_MOVE:
-            *windowPtr = AddWindow(&sWhichMoveMsgWindowTemplate);
-            break;
+        // case PARTY_MSG_DO_WHAT_WITH_MON:
+        //     *windowPtr = AddWindow(&sDoWhatWithMonMsgWindowTemplate);
+        //     break;
+        // case PARTY_MSG_DO_WHAT_WITH_ITEM:
+        //     *windowPtr = AddWindow(&sDoWhatWithItemMsgWindowTemplate);
+        //     break;
+        // case PARTY_MSG_DO_WHAT_WITH_MAIL:
+        //     *windowPtr = AddWindow(&sDoWhatWithMailMsgWindowTemplate);
+        //     break;
+        // case PARTY_MSG_RESTORE_WHICH_MOVE:
+        // case PARTY_MSG_BOOST_PP_WHICH_MOVE:
+        //     *windowPtr = AddWindow(&sWhichMoveMsgWindowTemplate);
+        //     break;
         case PARTY_MSG_ALREADY_HOLDING_ONE:
             *windowPtr = AddWindow(&sAlreadyHoldingOneMsgWindowTemplate);
             break;
