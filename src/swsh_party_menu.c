@@ -361,7 +361,7 @@ static void CreatePartyMonStatusSprite(struct Pokemon *, struct PartyMenuBox *);
 static void LoadPartyMonHoverCursor(void);
 static void CreatePartyMonHoverSprite(struct PartyMenuBox *, u8);
 static void LoadMessageWindowFillSprite(void);
-static void CreateMessageWindowFillSpriteAt(s16 x, s16 y);
+static void CreateMessageWindowFillSprite(void);
 static void DestroyMessageWindowFillSprite(void);
 static void DestroyPartyMonHoverSprite(void);
 static void CreatePartyMonItemIconSprite(struct PartyMenuBox *, u8, u16);
@@ -881,8 +881,6 @@ static bool8 ShowPartyMenu(void)
     case 26:
         CreateTask(sPartyMenuInternal->task, 0);
         DisplayPartyMenuStdMessage(sPartyMenuInternal->messageId);
-        // For testing: create the message window composed of 7x2 sprites
-        // CreateMessageWindowFillSpriteAt(24, 128);
         gMain.state++;
         break;
     case 27:
@@ -1003,11 +1001,39 @@ static bool8 ReloadPartyMenu(void)
         gMain.state++;
         break;
     case 20:
+        sPartyMenuInternal->data[0] = 0;
+        gMain.state++;
+        break;
+    case 21:
+        if (gPartyMenu.menuType != PARTY_MENU_TYPE_IN_BATTLE && gPartyMenu.menuType != PARTY_MENU_TYPE_MULTI_SHOWCASE && gPartyMenu.slotId < gPlayerPartyCount && GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES) != SPECIES_NONE)
+        {
+            sMonSpriteId = LoadMonGfxAndSprite(&gPlayerParty[gPartyMenu.slotId], &sPartyMenuInternal->data[0], FALSE);
+            if (sMonSpriteId != 0xFF)
+                gMain.state++;
+        }
+        else
+            gMain.state++;
+        break;
+    case 22:
+        sPartyMenuInternal->data[0] = 0;
+        gMain.state++;
+        break;
+    case 23:
+        if (gPartyMenu.menuType != PARTY_MENU_TYPE_IN_BATTLE && gPartyMenu.menuType != PARTY_MENU_TYPE_MULTI_SHOWCASE && gPartyMenu.slotId < gPlayerPartyCount && GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES) != SPECIES_NONE)
+        {
+            sMonShadowSpriteId = LoadMonGfxAndSprite(&gPlayerParty[gPartyMenu.slotId], &sPartyMenuInternal->data[0], TRUE);
+            if (sMonShadowSpriteId != 0xFF)
+                gMain.state++;
+        }
+        else
+            gMain.state++;
+        break;
+    case 24:
         BlendPalettes(PALETTES_ALL, 16, RGB_WHITEALPHA);
         gPaletteFade.bufferTransferDisabled = FALSE;
         gMain.state++;
         break;
-    case 21:
+    case 25:
         BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_WHITEALPHA);
         gMain.state++;
         break;
@@ -3619,7 +3645,7 @@ static u8 DisplaySelectionWindow(u8 windowType)
 
 static void PrintMessage(const u8 *text)
 {
-    CreateMessageWindowFillSpriteAt(24, 128);
+    CreateMessageWindowFillSprite();
     DrawSwShPartyMsgFrame(WIN_MSG, FALSE);
     gTextFlags.canABSpeedUpPrint = TRUE;
     AddTextPrinterParameterized2(WIN_MSG, FONT_NORMAL, text, GetPlayerTextSpeedDelay(), 0, TEXT_COLOR_WHITE, TEXT_COLOR_TRANSPARENT, TEXT_COLOR_DARK_GRAY);
@@ -5528,7 +5554,7 @@ static void CreatePartyMonHoverSprite(struct PartyMenuBox *menuBox, u8 slot)
     }
 
     // When using or giving an item, show the item icon instead of the select cursor
-    if ((gPartyMenu.action == PARTY_ACTION_USE_ITEM || gPartyMenu.action == PARTY_ACTION_GIVE_ITEM || gPartyMenu.action == PARTY_ACTION_MOVE_ITEM)
+    if ((gPartyMenu.action == PARTY_ACTION_USE_ITEM || gPartyMenu.action == PARTY_ACTION_GIVE_ITEM || gPartyMenu.action == PARTY_ACTION_MOVE_ITEM || gPartyMenu.action == PARTY_ACTION_FUSION)
         && gSpecialVar_ItemId != ITEM_NONE)
     {
         DestroyPartyMonHoverSprite();
@@ -5849,11 +5875,11 @@ static void LoadMessageWindowFillSprite(void)
     LoadSpritePalette(&sSpritePal_MessageWindowFill);
 }
 
-// Create a 7x2 message window using the pieces defined in data/party_menu.h
-// x,y specify the top-left corner of the overall window. Priority and
-// subpriority are set according to the user's request.
-static void CreateMessageWindowFillSpriteAt(s16 x, s16 y)
+// Sprite bg for message window
+static void CreateMessageWindowFillSprite(void)
 {
+    s16 x=24;
+    s16 y=128;
     int i;
     u8 spriteId;
 
@@ -7768,6 +7794,41 @@ void ItemUseCB_EvolutionStone(u8 taskId, TaskFunc task)
 #define forgetMove           data[14]
 #define storageIndex         data[15]
 
+#define MOSAIC_ANIM_DURATION 15
+
+static void SpriteCB_MosaicAnim(struct Sprite *sprite)
+{
+    if (sprite->data[5] > 0)
+        sprite->data[5]--;
+
+    SetGpuReg(REG_OFFSET_MOSAIC, (sprite->data[5] << 12) | (sprite->data[5] << 8));
+
+    if (sprite->data[5] == 0)
+    {
+        sprite->oam.mosaic = FALSE;
+        if (sprite->data[6] == 1) // Restore MonIcon
+            sprite->callback = SpriteCB_MonIcon;
+        else // Restore PartyMon / Shadow
+            sprite->callback = SpriteCB_PartyMonPokemon; 
+    }
+}
+
+static u8 LoadAndApplyMosaicToMonSprite(struct Pokemon *mon, bool32 isShadow)
+{
+    s16 state = 0;
+    u8 spriteId;
+    while ((spriteId = LoadMonGfxAndSprite(mon, &state, isShadow)) == 0xFF);
+
+    if (spriteId != MAX_SPRITES)
+    {
+        gSprites[spriteId].oam.mosaic = TRUE;
+        gSprites[spriteId].data[5] = MOSAIC_ANIM_DURATION;
+        gSprites[spriteId].data[6] = 0; // Restore PartyMon
+        gSprites[spriteId].callback = SpriteCB_MosaicAnim;
+    }
+    return spriteId;
+}
+
 static void Task_TryItemUseFusionChange(u8 taskId);
 static void SpriteCB_FormChangeIconMosaic(struct Sprite *sprite);
 
@@ -8022,6 +8083,9 @@ static void Task_TryItemUseFusionChange(u8 taskId)
                 icon2->callback = SpriteCB_FormChangeIconMosaic;
                 SetGpuReg(REG_OFFSET_MOSAIC, (icon2->data[0] << 12) | (icon2->data[1] << 8));
             }
+            DestroyMonSprite();
+            sMonSpriteId = LoadAndApplyMosaicToMonSprite(mon, FALSE);
+            sMonShadowSpriteId = LoadAndApplyMosaicToMonSprite(mon, TRUE);
         }
 
         if (++gTasks[taskId].tAnimWait == 60)
@@ -8114,7 +8178,12 @@ void ItemUseCB_Fusion(u8 taskId, TaskFunc taskFunc)
 {
     u16 i;
     struct Task *task = &gTasks[taskId];
-    u16 species = GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES);
+    u8 slotId = gPartyMenu.slotId;
+
+    if (gPartyMenu.action == PARTY_ACTION_FUSION)
+        slotId = gPartyMenu.slotId2;
+
+    u16 species = GetMonData(&gPlayerParty[slotId], MON_DATA_SPECIES);
     const struct Fusion *itemFusion = gFusionTablePointers[species];
 
     PlaySE(SE_SELECT);
@@ -8141,7 +8210,7 @@ void ItemUseCB_Fusion(u8 taskId, TaskFunc taskFunc)
                 {
                     task->fusionType = UNFUSE_MON;
                     task->firstFusion = species;
-                    task->firstFusionSlot = gPartyMenu.slotId;
+                    task->firstFusionSlot = slotId;
                     task->storageIndex = itemFusion[i].fusionStorageIndex;
                     task->fusionResult = itemFusion[i].targetSpecies1;
                     task->unfuseSecondMon = itemFusion[i].targetSpecies2;
@@ -8161,17 +8230,17 @@ void ItemUseCB_Fusion(u8 taskId, TaskFunc taskFunc)
                 {
                     task->fusionType = FUSE_MON;
                     task->firstFusion = species;
-                    task->firstFusionSlot = gPartyMenu.slotId;
+                    task->firstFusionSlot = slotId;
                     task->storageIndex = itemFusion[i].fusionStorageIndex;
                     task->func = Task_HandleChooseMonInput;
                     gPartyMenuUseExitCallback = FALSE;
                     sPartyMenuInternal->exitCallback = NULL;
                     PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
                     gPartyMenu.action = PARTY_ACTION_FUSION;
-                    AnimatePartySlot(gPartyMenu.slotId, 1);
-                    gPartyMenu.slotId2 = gPartyMenu.slotId;
-                    CreateSelectFrame(&sPartyMenuBoxes[gPartyMenu.slotId], gPartyMenu.slotId);
-                    DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_SECOND_FUSION);
+                    AnimatePartySlot(slotId, 1);
+                    gPartyMenu.slotId2 = slotId;
+                    CreateSelectFrame(&sPartyMenuBoxes[slotId], slotId);
+                    // DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_SECOND_FUSION);
                     return;
                 }
             }
@@ -8187,7 +8256,7 @@ void ItemUseCB_Fusion(u8 taskId, TaskFunc taskFunc)
                 {
                     task->storageIndex = itemFusion[i].fusionStorageIndex;
                     task->fusionResult = itemFusion[i].fusingIntoMon;
-                    task->secondFusionSlot = gPartyMenu.slotId;
+                    task->secondFusionSlot = slotId;
                     task->moveToLearn = itemFusion[i].fusionMove;
                     task->tExtraMoveHandling = itemFusion[i].extraMoveHandling;
                     // Start Fusion
@@ -8272,11 +8341,14 @@ static void Task_TryItemUseFormChange(u8 taskId)
             FreeAndDestroyMonIconSprite(icon);
             CreatePartyMonIconSpriteParameterized(targetSpecies, GetMonData(mon, MON_DATA_PERSONALITY, NULL), &sPartyMenuBoxes[gPartyMenu.slotId], 1);
             icon->oam.mosaic = TRUE;
-            icon->data[0] = 10;
-            icon->data[1] = 1;
-            icon->data[2] = taskId;
-            icon->callback = SpriteCB_FormChangeIconMosaic;
-            SetGpuReg(REG_OFFSET_MOSAIC, (icon->data[0] << 12) | (icon->data[1] << 8));
+            icon->data[5] = MOSAIC_ANIM_DURATION;
+            icon->data[6] = 1;
+            icon->callback = SpriteCB_MosaicAnim;
+            SetGpuReg(REG_OFFSET_MOSAIC, (icon->data[5] << 12) | (icon->data[5] << 8));
+
+            DestroyMonSprite();
+            sMonSpriteId = LoadAndApplyMosaicToMonSprite(mon, FALSE);
+            sMonShadowSpriteId = LoadAndApplyMosaicToMonSprite(mon, TRUE);
         }
 
         if (++gTasks[taskId].tAnimWait == 60)
@@ -8481,6 +8553,14 @@ void TryItemHoldFormChange(struct Pokemon *mon, s8 slotId)
         CreatePartyMonIconSpriteParameterized(targetSpecies, GetMonData(mon, MON_DATA_PERSONALITY, NULL), &sPartyMenuBoxes[slotId], 1);
         CalculateMonStats(mon);
         UpdatePartyMonHeldItemSprite(mon, &sPartyMenuBoxes[slotId]);
+
+        // Mosaic anim for animated mon sprite
+        if (slotId == gPartyMenu.slotId)
+        {
+            DestroyMonSprite();
+            sMonSpriteId = LoadAndApplyMosaicToMonSprite(mon, FALSE);
+            sMonShadowSpriteId = LoadAndApplyMosaicToMonSprite(mon, TRUE);
+        }
     }
 }
 
