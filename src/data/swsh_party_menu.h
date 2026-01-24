@@ -45,6 +45,7 @@ static const u8 sText_EggNickname[POKEMON_NAME_LENGTH + 1]  = _("Egg");
 static const u8 sMenuText_Confirm[]                         = _("Confirm");
 static const u8 sMenuText_Switch[]                          = _("Switch");
 static const u8 sMenuText_Boxes[]                           = _("Boxes");
+static const u8 sText_SendThisMonToPC[]                     = _("Send {STR_VAR_1} to the PC?");
 
 static const struct BgTemplate sPartyMenuBgTemplates[] =
 {
@@ -1055,6 +1056,7 @@ static const u8 *const sActionStringTable[] =
     [PARTY_MSG_CHOOSE_SECOND_FUSION]   = gText_NextFusionMon,
     [PARTY_MSG_NO_POKEMON]             = COMPOUND_STRING("You have no POKéMON."),
     [PARTY_MSG_CHOOSE_MON_FOR_BOX]     = gText_SendWhichMonToPC,
+    [PARTY_MSG_SEND_MON_TO_BOX]        = sText_SendThisMonToPC,
     [PARTY_MSG_MOVE_ITEM_WHERE]        = gText_MoveItemWhere,
 };
 
