@@ -3416,21 +3416,6 @@ static void DisplayPartyPokemonMaxHP(u16 maxhp, struct PartyMenuBox *menuBox)
         DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[16]);
 }
 
-// Update both HP and MaxHP together to avoid flickering (rare/exp candy use case, pretty much)
-static void DisplayPartyPokemonHPAndMaxHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
-{
-    if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
-    {
-        if (c != 0)
-            RedrawNicknameHPmaxHP(mon, menuBox, TRUE, TRUE);
-        if (c != 2)
-        {
-            DisplayPartyPokemonMaxHP(GetMonData(mon, MON_DATA_MAX_HP), menuBox);
-            DisplayPartyPokemonHP(GetMonData(mon, MON_DATA_HP), GetMonData(mon, MON_DATA_MAX_HP), menuBox);
-        }
-    }
-}
-
 static void DisplayPartyPokemonHPBarCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox)
 {
     if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
@@ -7467,7 +7452,7 @@ static void UpdateMonDisplayInfoAfterRareCandy(u8 slot, struct Pokemon *mon)
     SetPartyMonAilmentGfx(mon, &sPartyMenuBoxes[slot]);
     if (gSprites[sPartyMenuBoxes[slot].statusSpriteId].invisible)
         DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[slot], 1);
-    DisplayPartyPokemonHPAndMaxHPCheck(mon, &sPartyMenuBoxes[slot], 1);
+    RedrawNicknameHPmaxHP(mon, &sPartyMenuBoxes[slot], TRUE, TRUE);
     DisplayPartyPokemonHPBarCheck(mon, &sPartyMenuBoxes[slot]);
     UpdatePartyMonHPBar(sPartyMenuBoxes[slot].monSpriteId, mon);
     AnimatePartySlot(slot, 1);
