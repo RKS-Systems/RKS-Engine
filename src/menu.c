@@ -54,10 +54,8 @@ static void WindowFunc_DrawStandardFrame(u8, u8, u8, u8, u8, u8);
 static void WindowFunc_DrawSignFrame(u8, u8, u8, u8, u8, u8);
 static inline void *GetWindowFunc_DialogueFrame(void);
 static void WindowFunc_DrawDialogueFrame(u8, u8, u8, u8, u8, u8);
-static void WindowFunc_DrawSwShPartyMsgFrame(u8, u8, u8, u8, u8, u8);
 static void WindowFunc_ClearStdWindowAndFrame(u8, u8, u8, u8, u8, u8);
 static void WindowFunc_ClearDialogWindowAndFrame(u8, u8, u8, u8, u8, u8);
-static void WindowFunc_ClearSwShPartyMsgWindowAndFrame(u8, u8, u8, u8, u8, u8);
 static void WindowFunc_DrawDialogFrameWithCustomTileAndPalette(u8, u8, u8, u8, u8, u8);
 static void WindowFunc_ClearDialogWindowAndFrameNullPalette(u8, u8, u8, u8, u8, u8);
 static void WindowFunc_DrawStdFrameWithCustomTileAndPalette(u8, u8, u8, u8, u8, u8);
@@ -76,8 +74,7 @@ static EWRAM_DATA bool8 sScheduledBgCopiesToVram[4] = {FALSE};
 static EWRAM_DATA u16 sTempTileDataBufferIdx = 0;
 static EWRAM_DATA void *sTempTileDataBuffer[0x20] = {NULL};
 
-const u16 gStandardMenuPalette[]   = INCBIN_U16("graphics/interface/std_menu.gbapal");
-const u8 sPartyMenuMsgBoxTilemap[] = INCBIN_U8("graphics/party_menu/swsh/message_box.bin");
+const u16 gStandardMenuPalette[] = INCBIN_U16("graphics/interface/std_menu.gbapal");
 
 static const struct WindowTemplate sStandardTextBox_WindowTemplates[] =
 {
@@ -148,24 +145,6 @@ void InitStandardTextBoxWindows(void)
     sMapNamePopupWindowId = WINDOW_NONE;
     if (OW_POPUP_GENERATION == GEN_5)
         sSecondaryPopupWindowId = WINDOW_NONE;
-}
-
-void DrawSwShPartyMsgFrame(u8 windowId, bool8 copyToVram)
-{
-    CallWindowFunction(windowId, WindowFunc_DrawSwShPartyMsgFrame);
-    FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
-    PutWindowTilemap(windowId);
-    if (copyToVram == TRUE)
-        CopyWindowToVram(windowId, COPYWIN_FULL);
-}
-
-void ClearSwShPartyMsgWindowAndFrame(u8 windowId, bool8 copyToVram)
-{
-    CallWindowFunction(windowId, WindowFunc_ClearSwShPartyMsgWindowAndFrame);
-    FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
-    ClearWindowTilemap(windowId);
-    if (copyToVram == TRUE)
-        CopyWindowToVram(windowId, COPYWIN_FULL);
 }
 
 void FreeAllOverworldWindowBuffers(void)
@@ -587,34 +566,6 @@ static void WindowFunc_ClearStdWindowAndFrame(u8 bg, u8 tilemapLeft, u8 tilemapT
 static void WindowFunc_ClearDialogWindowAndFrame(u8 bg, u8 tilemapLeft, u8 tilemapTop, u8 width, u8 height, u8 paletteNum)
 {
     FillBgTilemapBufferRect(bg, 0, tilemapLeft - 3, tilemapTop - 1, width + 6, height + 2, STD_WINDOW_PALETTE_NUM);
-}
-
-static void WindowFunc_DrawSwShPartyMsgFrame(u8 bg, u8 tilemapLeft, u8 tilemapTop, u8 width, u8 height, u8 paletteNum)
-{
-    int i;
-
-    // Left block: src cols 0-3 (4 cols) x 6 rows
-    CopyRectToBgTilemapBufferRect(bg, sPartyMenuMsgBoxTilemap, 0, 0, 9, 6,
-                                  tilemapLeft - 1, tilemapTop - 1, 4, 6,
-                                  0, SWSH_PARTY_MENU_MSG_BASE_TILE_NUM, 0);
-
-    // Middle column (src col 4) repeated
-    for (i = tilemapLeft - 1 + 4; i < tilemapLeft + 1 + width - 4; i++)
-    {
-        CopyRectToBgTilemapBufferRect(bg, sPartyMenuMsgBoxTilemap, 4, 0, 9, 6,
-                                      i, tilemapTop - 1, 1, 6,
-                                      0, SWSH_PARTY_MENU_MSG_BASE_TILE_NUM, 0);
-    }
-
-    // Right block: src cols 5-8 (4 cols)
-    CopyRectToBgTilemapBufferRect(bg, sPartyMenuMsgBoxTilemap, 5, 0, 9, 6,
-                                  tilemapLeft + 1 + width - 4, tilemapTop - 1, 4, 6,
-                                  0, SWSH_PARTY_MENU_MSG_BASE_TILE_NUM, 0);
-}
-
-static void WindowFunc_ClearSwShPartyMsgWindowAndFrame(u8 bg, u8 tilemapLeft, u8 tilemapTop, u8 width, u8 height, u8 paletteNum)
-{
-    FillBgTilemapBufferRect(bg, 0, tilemapLeft - 1, tilemapTop, width + 4, height + 1, 0);
 }
 
 void SetStandardWindowBorderStyle(u8 windowId, bool8 copyToVram)

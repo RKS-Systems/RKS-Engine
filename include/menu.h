@@ -10,7 +10,6 @@
 #define STD_WINDOW_PALETTE_NUM 14
 #define STD_WINDOW_PALETTE_SIZE PLTT_SIZEOF(10)
 #define STD_WINDOW_BASE_TILE_NUM 0x214
-#define SWSH_PARTY_MENU_MSG_BASE_TILE_NUM 0x5A // 0x223 for future reference
 
 #define MENU_NOTHING_CHOSEN -2
 #define MENU_B_PRESSED -1
@@ -102,8 +101,6 @@ void ListMenuLoadStdPalAt(u8 palOffset, u8 palId);
 u8 Menu_MoveCursor(s8 cursorDelta);
 u8 Menu_MoveCursorNoWrapAround(s8 cursorDelta);
 void DrawStdWindowFrame(u8 windowId, bool8 copyToVram);
-void DrawSwShPartyMsgFrame(u8 windowId, bool8 copyToVram);
-void ClearSwShPartyMsgWindowAndFrame(u8 windowId, bool8 copyToVram);
 u8 AddStartMenuWindow(u8 numActions);
 u8 InitMenuNormal(u8 windowId, u8 fontId, u8 left, u8 top, u8 cursorHeight, u8 numChoices, u8 initialCursorPos);
 void LoadMessageBoxAndFrameGfx(u8 windowId, bool8 copyToVram);

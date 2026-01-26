@@ -38,8 +38,8 @@ const u16 gHeldItemPalette[]             = INCBIN_U16("graphics/party_menu/hold_
 
 static const u32 sHoverCursorGfx[]        = INCBIN_U32("graphics/party_menu/swsh/hover_cursor.4bpp.smol");
 static const u32 sSelectFrameGfx[]        = INCBIN_U32("graphics/party_menu/swsh/select_frame.4bpp.smol");
-static const u32 sMessageWindowFillGfx[]  = INCBIN_U32("graphics/party_menu/swsh/message_window.4bpp.smol");
-static const u32 sMultiuseWindowFillGfx[] = INCBIN_U32("graphics/party_menu/swsh/multiuse_window.4bpp.smol");
+static const u32 sMessageWindowGfx[]      = INCBIN_U32("graphics/party_menu/swsh/message_window.4bpp.smol");
+static const u32 sMultiuseWindowGfx[]     = INCBIN_U32("graphics/party_menu/swsh/multiuse_window.4bpp.smol");
 static const u16 sMonShadowPalette[]      = INCBIN_U16("graphics/party_menu/swsh/shadow.gbapal");
 static const u32 sMoveTypes_Gfx[]         = INCBIN_U32("graphics/party_menu/swsh/types/move_types.4bpp.smol");
 
@@ -1364,7 +1364,7 @@ static const struct SpriteTemplate sSpriteTemplate_SelectFrame =
     .callback = SpriteCallbackDummy,
 };
 
-static const struct OamData sOamData_MessageWindowFill =
+static const struct OamData sOamData_MessageWindow =
 {
     .y = 0,
     .affineMode = ST_OAM_AFFINE_OFF,
@@ -1381,60 +1381,80 @@ static const struct OamData sOamData_MessageWindowFill =
     .affineParam = 0,
 };
 
-static const union AnimCmd sSpriteAnim_MessageWindowFill_TopLeft[] = {
+static const union AnimCmd sSpriteAnim_MessageWindow_TopLeft[] = {
     ANIMCMD_FRAME(0, 0, FALSE, FALSE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MessageWindowFill_Middle[] = {
-    ANIMCMD_FRAME(8, 0, FALSE, FALSE),
+static const union AnimCmd sSpriteAnim_MessageWindow_TopBody[] = {
+    ANIMCMD_FRAME(24, 0, FALSE, FALSE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MessageWindowFill_TopRight[] = {
-    ANIMCMD_FRAME(16, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_MessageWindowFill_BottomLeft[] = {
+static const union AnimCmd sSpriteAnim_MessageWindow_TopRight[] = {
     ANIMCMD_FRAME(16, 0, TRUE, TRUE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MessageWindowFill_BottomRight[] = {
+static const union AnimCmd sSpriteAnim_MessageWindow_MiddleLeft[] = {
+    ANIMCMD_FRAME(8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_MessageWindow_MiddleBody[] = {
+    ANIMCMD_FRAME(28, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_MessageWindow_MiddleRight[] = {
+    ANIMCMD_FRAME(8, 0, TRUE, TRUE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_MessageWindow_BottomLeft[] = {
+    ANIMCMD_FRAME(16, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_MessageWindow_BottomBody[] = {
+    ANIMCMD_FRAME(24, 0, TRUE, TRUE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_MessageWindow_BottomRight[] = {
     ANIMCMD_FRAME(0, 0, TRUE, TRUE),
     ANIMCMD_END
 };
 
-static const union AnimCmd *const sSpriteAnimTable_MessageWindowFill[] = {
-    sSpriteAnim_MessageWindowFill_TopLeft,
-    sSpriteAnim_MessageWindowFill_Middle,
-    sSpriteAnim_MessageWindowFill_TopRight,
-    sSpriteAnim_MessageWindowFill_BottomLeft,
-    sSpriteAnim_MessageWindowFill_BottomRight,
+static const union AnimCmd *const sSpriteAnimTable_MessageWindow[] = {
+    sSpriteAnim_MessageWindow_TopLeft,
+    sSpriteAnim_MessageWindow_TopBody,
+    sSpriteAnim_MessageWindow_TopRight,
+    sSpriteAnim_MessageWindow_MiddleLeft,
+    sSpriteAnim_MessageWindow_MiddleBody,
+    sSpriteAnim_MessageWindow_MiddleRight,
+    sSpriteAnim_MessageWindow_BottomLeft,
+    sSpriteAnim_MessageWindow_BottomBody,
+    sSpriteAnim_MessageWindow_BottomRight,
 };
 
-static const struct CompressedSpriteSheet sSpriteSheet_MessageWindowFill =
+static const struct CompressedSpriteSheet sSpriteSheet_MessageWindow =
 {
-    .data = sMessageWindowFillGfx,
-    .size = (32 * 16 * 3) / 2,
+    .data = sMessageWindowGfx,
+    .size = (32 * 16 * 4 + 32 * 8) / 2,
     .tag = TAG_MESSAGE_WINDOW,
 };
 
-static const struct SpritePalette sSpritePal_MessageWindowFill =
+static const struct SpritePalette sSpritePal_MessageWindow =
 {
     .data = gHeldItemPalette,
     .tag = TAG_HELD_ITEM,
 };
 
-static const struct SpriteTemplate sSpriteTemplate_MessageWindowFill =
+static const struct SpriteTemplate sSpriteTemplate_MessageWindow =
 {
     .tileTag = TAG_MESSAGE_WINDOW,
     .paletteTag = TAG_HELD_ITEM,
-    .oam = &sOamData_MessageWindowFill,
-    .anims = sSpriteAnimTable_MessageWindowFill,
+    .oam = &sOamData_MessageWindow,
+    .anims = sSpriteAnimTable_MessageWindow,
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
     .callback = SpriteCallbackDummy,
 };
 
-static const struct OamData sOamData_MultiuseWindowFill =
+static const struct OamData sOamData_MultiuseWindow =
 {
     .y = 0,
     .affineMode = ST_OAM_AFFINE_OFF,
@@ -1451,49 +1471,49 @@ static const struct OamData sOamData_MultiuseWindowFill =
     .affineParam = 0,
 };
 
-static const union AnimCmd sSpriteAnim_MultiuseWindowFill_TopLeft[] = {
+static const union AnimCmd sSpriteAnim_MultiuseWindow_TopLeft[] = {
     ANIMCMD_FRAME(0, 0, FALSE, FALSE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MultiuseWindowFill_TopRight[] = {
+static const union AnimCmd sSpriteAnim_MultiuseWindow_TopRight[] = {
     ANIMCMD_FRAME(8, 0, FALSE, FALSE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MultiuseWindowFill_BottomLeft[] = {
+static const union AnimCmd sSpriteAnim_MultiuseWindow_BottomLeft[] = {
     ANIMCMD_FRAME(16, 0, FALSE, FALSE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MultiuseWindowFill_BottomRight[] = {
+static const union AnimCmd sSpriteAnim_MultiuseWindow_BottomRight[] = {
     ANIMCMD_FRAME(8, 0, TRUE, TRUE),
     ANIMCMD_END
 };
 
-static const union AnimCmd *const sSpriteAnimTable_MultiuseWindowFill[] = {
-    sSpriteAnim_MultiuseWindowFill_TopLeft,
-    sSpriteAnim_MultiuseWindowFill_TopRight,
-    sSpriteAnim_MultiuseWindowFill_BottomLeft,
-    sSpriteAnim_MultiuseWindowFill_BottomRight,
+static const union AnimCmd *const sSpriteAnimTable_MultiuseWindow[] = {
+    sSpriteAnim_MultiuseWindow_TopLeft,
+    sSpriteAnim_MultiuseWindow_TopRight,
+    sSpriteAnim_MultiuseWindow_BottomLeft,
+    sSpriteAnim_MultiuseWindow_BottomRight,
 };
 
-static const struct CompressedSpriteSheet sSpriteSheet_MultiuseWindowFill =
+static const struct CompressedSpriteSheet sSpriteSheet_MultiuseWindow =
 {
-    .data = sMultiuseWindowFillGfx,
+    .data = sMultiuseWindowGfx,
     .size = (32 * 16 * 3) / 2,
     .tag = TAG_MULTIUSE_WINDOW,
 };
 
-static const struct SpritePalette sSpritePal_MultiuseWindowFill =
+static const struct SpritePalette sSpritePal_MultiuseWindow =
 {
     .data = gHeldItemPalette,
     .tag = TAG_HELD_ITEM,
 };
 
-static const struct SpriteTemplate sSpriteTemplate_MultiuseWindowFill =
+static const struct SpriteTemplate sSpriteTemplate_MultiuseWindow =
 {
     .tileTag = TAG_MULTIUSE_WINDOW,
     .paletteTag = TAG_HELD_ITEM,
-    .oam = &sOamData_MultiuseWindowFill,
-    .anims = sSpriteAnimTable_MultiuseWindowFill,
+    .oam = &sOamData_MultiuseWindow,
+    .anims = sSpriteAnimTable_MultiuseWindow,
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
     .callback = SpriteCallbackDummy,

@@ -82,14 +82,6 @@ static const struct TilesPal sWindowFrames[WINDOW_FRAMES_COUNT] =
     {sTextWindowFrame20_Gfx, sTextWindowFrame20_Pal}
 };
 
-const u8 sPartyMenuMsgBox_Gfx[] = INCBIN_U8("graphics/party_menu/swsh/message_box.4bpp");
-
-void LoadSwShPartyMsgBoxGfx(u8 windowId, u16 destOffset, u8 palOffset)
-{
-    LoadBgTiles(GetWindowAttribute(windowId, WINDOW_BG), sPartyMenuMsgBox_Gfx, 0xE0, destOffset);
-    LoadPalette(gStandardMenuPalette, palOffset, STD_WINDOW_PALETTE_SIZE);
-}
-
 static const u16 sTextWindowDexNavFrame[] = INCBIN_U16("graphics/text_window/dexnav_pal.gbapal");
 static const struct TilesPal sDexNavWindowFrame = {gTextWindowFrame1_Gfx, sTextWindowDexNavFrame};
 

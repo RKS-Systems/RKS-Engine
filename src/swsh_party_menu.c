@@ -276,8 +276,8 @@ static EWRAM_DATA u8 sFinalLevel = 0;
 static EWRAM_DATA u8 sHoverCursorSpriteId = 0;
 static EWRAM_DATA u8 sItemIconSpriteId = 0;
 static EWRAM_DATA u8 sSelectFrameSpriteIds[7] = {0}; // Left + 5 middle + Right
-static EWRAM_DATA u8 sMessageWindowFillSpriteIds[14] = {0}; // 7 across * 2 rows
-static EWRAM_DATA u8 sMultiuseWindowFillSpriteIds[6] = {0}; // 3 across * 2 rows
+static EWRAM_DATA u8 sMessageWindowSpriteIds[24] = {0}; // 8 across * 3 rows
+static EWRAM_DATA u8 sMultiuseWindowSpriteIds[6] = {0}; // 3 across * 2 rows
 static EWRAM_DATA u8 sMonSpriteId = 0;
 static EWRAM_DATA u8 sMoveWindowIds[MAX_MON_MOVES];
 static EWRAM_DATA u8 sAbilityWindowId;
@@ -362,12 +362,12 @@ static void CreatePartyMonIconSprite(struct Pokemon *, struct PartyMenuBox *, u3
 static void CreatePartyMonStatusSprite(struct Pokemon *, struct PartyMenuBox *);
 static void LoadPartyMonHoverCursor(void);
 static void CreatePartyMonHoverSprite(struct PartyMenuBox *, u8);
-static void LoadMessageWindowFillSprite(void);
-static void CreateMessageWindowFillSprite(void);
-static void DestroyMessageWindowFillSprite(void);
-static void LoadMultiuseWindowFillSprite(void);
-static void CreateMultiuseWindowFillSprite(void);
-static void DestroyMultiuseWindowFillSprite(void);
+static void LoadMessageWindowSprite(void);
+static void CreateMessageWindowSprite(void);
+static void DestroyMessageWindowSprite(void);
+static void LoadMultiuseWindowSprite(void);
+static void CreateMultiuseWindowSprite(void);
+static void DestroyMultiuseWindowSprite(void);
 static void DestroyPartyMonHoverSprite(void);
 static void CreatePartyMonItemIconSprite(struct PartyMenuBox *, u8, u16);
 static void CreatePartyMonItemMoveSprite(u8 fromSlot, u8 toSlot, u16 itemId);
@@ -850,7 +850,6 @@ static bool8 ShowPartyMenu(void)
         gMain.state++;
         break;
     case 13:
-        LoadSwShPartyMsgBoxGfx(0, SWSH_PARTY_MENU_MSG_BASE_TILE_NUM, BG_PLTT_ID(STD_WINDOW_PALETTE_NUM));
         gMain.state++;
         break;
     case 14:
@@ -882,11 +881,11 @@ static bool8 ShowPartyMenu(void)
         }
         break;
     case 19:
-        LoadMessageWindowFillSprite();
+        LoadMessageWindowSprite();
         gMain.state++;
         break;
     case 20:
-        LoadMultiuseWindowFillSprite();
+        LoadMultiuseWindowSprite();
         gMain.state++;
         break;
     case 21:
@@ -1034,11 +1033,11 @@ static bool8 ReloadPartyMenu(void)
         gMain.state++;
         break;
     case 15:
-        LoadMessageWindowFillSprite();
+        LoadMessageWindowSprite();
         gMain.state++;
         break;
     case 16:
-        LoadMultiuseWindowFillSprite();
+        LoadMultiuseWindowSprite();
         gMain.state++;
         break;
     case 17:
@@ -2454,7 +2453,7 @@ static void Task_PrintAndWaitForText(u8 taskId)
         {
             ClearStdWindowAndFrameToTransparent(WIN_MSG, FALSE);
             ClearWindowTilemap(WIN_MSG);
-            DestroyMessageWindowFillSprite();
+            DestroyMessageWindowSprite();
             ScheduleBgCopyTilemapToVram(2);
         }
         DestroyTask(taskId);
@@ -2482,7 +2481,7 @@ static void Task_ReturnToChooseMonAfterText(u8 taskId)
     {
         ClearStdWindowAndFrameToTransparent(WIN_MSG, FALSE);
         ClearWindowTilemap(WIN_MSG);
-        DestroyMessageWindowFillSprite();
+        DestroyMessageWindowSprite();
         ScheduleBgCopyTilemapToVram(2);
         {
             u8 promptType = GetButtonPromptType();
@@ -3609,7 +3608,7 @@ void UNUSED DisplayPartyMenuStdMessage(u32 stringId)
         // Clear WIN_MSG for prompts that appear after item operations
         ClearStdWindowAndFrameToTransparent(WIN_MSG, FALSE);
         ClearWindowTilemap(WIN_MSG);
-        DestroyMessageWindowFillSprite();
+        DestroyMessageWindowSprite();
         ScheduleBgCopyTilemapToVram(2);
         return;
 
@@ -3734,8 +3733,12 @@ static u8 DisplaySelectionWindow(u8 windowType)
 
 static void PrintMessage(const u8 *text)
 {
-    CreateMessageWindowFillSprite();
-    DrawSwShPartyMsgFrame(WIN_MSG, FALSE);
+    CreateMessageWindowSprite();
+    FillBgTilemapBufferRect(2, 0, 1, 15, 28, 4, 14);
+    PutWindowTilemap(WIN_MSG);
+    FillWindowPixelBuffer(WIN_MSG, PIXEL_FILL(0));
+    CopyWindowToVram(WIN_MSG, COPYWIN_GFX);
+    ScheduleBgCopyTilemapToVram(2);
     gTextFlags.canABSpeedUpPrint = TRUE;
     AddTextPrinterParameterized2(WIN_MSG, FONT_NORMAL, text, GetPlayerTextSpeedDelay(), 0, TEXT_COLOR_WHITE, TEXT_COLOR_TRANSPARENT, TEXT_COLOR_DARK_GRAY);
 }
@@ -5994,106 +5997,121 @@ static void UNUSED LoadPartyMenuPokeballGfx(void)
     */
 }
 
-static void LoadMessageWindowFillSprite(void)
+static void LoadMessageWindowSprite(void)
 {
     int i;
 
-    for (i = 0; i < ARRAY_COUNT(sMessageWindowFillSpriteIds); i++)
-        sMessageWindowFillSpriteIds[i] = MAX_SPRITES;
+    for (i = 0; i < ARRAY_COUNT(sMessageWindowSpriteIds); i++)
+        sMessageWindowSpriteIds[i] = MAX_SPRITES;
 
-    LoadCompressedSpriteSheet(&sSpriteSheet_MessageWindowFill);
-    LoadSpritePalette(&sSpritePal_MessageWindowFill);
+    LoadCompressedSpriteSheet(&sSpriteSheet_MessageWindow);
+    LoadSpritePalette(&sSpritePal_MessageWindow);
 }
 
 // Sprite bg for message window
-static void CreateMessageWindowFillSprite(void)
+static void CreateMessageWindowSprite(void)
 {
-    s16 x=24;
-    s16 y=128;
+    s16 x=16;
+    s16 y=120;
     int i;
     u8 spriteId;
 
-    if (sMessageWindowFillSpriteIds[0] != MAX_SPRITES)
+    if (sMessageWindowSpriteIds[0] != MAX_SPRITES)
         return;
 
-    // Top row: TopLeft, Middle * 5, TopRight
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < 24; i++)
     {
-        spriteId = CreateSprite(&sSpriteTemplate_MessageWindowFill, x + (i * 32), y, 0);
-        if (spriteId != MAX_SPRITES)
-        {
-            if (i == 0)
-                StartSpriteAnim(&gSprites[spriteId], 0); // TopLeft
-            else if (i == 6)
-                StartSpriteAnim(&gSprites[spriteId], 2); // TopRight
-            else
-                StartSpriteAnim(&gSprites[spriteId], 1); // Middle
+        u8 animNum;
+        u8 subpriority = 1;
+        s16 spriteX, spriteY;
 
-            gSprites[spriteId].oam.priority = 1;
-            gSprites[spriteId].subpriority = 0;
-            sMessageWindowFillSpriteIds[i] = spriteId;
+        if (i < 21) // Main body (Left + Middle)
+        {
+            u8 row = i / 7;
+            u8 col = i % 7;
+            
+            spriteX = x + (col * 32);
+            spriteY = y + (row * 16);
+
+            // Match original logic: Top row (row 0) has subpriority 0, others 1
+            if (row == 0) subpriority = 0;
+
+            if (col == 0) // Left edge
+            {
+                if (row == 0) animNum = 0;      // TopLeft
+                else if (row == 1) animNum = 3; // MiddleLeft
+                else animNum = 6;               // BottomLeft
+            }
+            else // Body
+            {
+                if (row == 0) animNum = 1;      // TopBody
+                else if (row == 1) animNum = 4; // MiddleBody
+                else animNum = 7;               // BottomBody
+            }
         }
-    }
+        else // Right column (TopRight, MiddleRight, BottomRight)
+        {
+            u8 row = i - 21;
+            
+            spriteX = 224;
+            spriteY = y + (row * 16);
+            subpriority = 0; // Right column always on top
 
-    // Bottom row: BottomLeft, Middle * 5, BottomRight
-    for (i = 0; i < 7; i++)
-    {
-        spriteId = CreateSprite(&sSpriteTemplate_MessageWindowFill, x + (i * 32), y + 16, 0);
+            if (row == 0) animNum = 2;      // TopRight
+            else if (row == 1) animNum = 5; // MiddleRight
+            else animNum = 8;               // BottomRight
+        }
+
+        spriteId = CreateSprite(&sSpriteTemplate_MessageWindow, spriteX, spriteY, 0);
         if (spriteId != MAX_SPRITES)
         {
-            if (i == 0)
-                StartSpriteAnim(&gSprites[spriteId], 3); // BottomLeft
-            else if (i == 6)
-                StartSpriteAnim(&gSprites[spriteId], 4); // BottomRight
-            else
-                StartSpriteAnim(&gSprites[spriteId], 1); // Middle (shared)
-
+            StartSpriteAnim(&gSprites[spriteId], animNum);
             gSprites[spriteId].oam.priority = 1;
-            gSprites[spriteId].subpriority = 0;
-            sMessageWindowFillSpriteIds[7 + i] = spriteId;
+            gSprites[spriteId].subpriority = subpriority;
+            sMessageWindowSpriteIds[i] = spriteId;
         }
     }
 }
 
-static void DestroyMessageWindowFillSprite(void)
+static void DestroyMessageWindowSprite(void)
 {
     int i; 
-    for (i = 0; i < ARRAY_COUNT(sMessageWindowFillSpriteIds); i++)
+    for (i = 0; i < ARRAY_COUNT(sMessageWindowSpriteIds); i++)
     {
-        if (sMessageWindowFillSpriteIds[i] != MAX_SPRITES)
+        if (sMessageWindowSpriteIds[i] != MAX_SPRITES)
         {
-            DestroySprite(&gSprites[sMessageWindowFillSpriteIds[i]]);
-            sMessageWindowFillSpriteIds[i] = MAX_SPRITES;
+            DestroySprite(&gSprites[sMessageWindowSpriteIds[i]]);
+            sMessageWindowSpriteIds[i] = MAX_SPRITES;
         }
     }
 }
 
 
-static void LoadMultiuseWindowFillSprite(void)
+static void LoadMultiuseWindowSprite(void)
 {
     int i;
 
-    for (i = 0; i < ARRAY_COUNT(sMultiuseWindowFillSpriteIds); i++)
-        sMultiuseWindowFillSpriteIds[i] = MAX_SPRITES;
+    for (i = 0; i < ARRAY_COUNT(sMultiuseWindowSpriteIds); i++)
+        sMultiuseWindowSpriteIds[i] = MAX_SPRITES;
 
-    LoadCompressedSpriteSheet(&sSpriteSheet_MultiuseWindowFill);
-    LoadSpritePalette(&sSpritePal_MultiuseWindowFill);
+    LoadCompressedSpriteSheet(&sSpriteSheet_MultiuseWindow);
+    LoadSpritePalette(&sSpritePal_MultiuseWindow);
 }
 
-static void CreateMultiuseWindowFillSprite(void)
+static void CreateMultiuseWindowSprite(void)
 {
     s16 x=160;
     s16 y=88;
     int i;
     u8 spriteId;
 
-    if (sMultiuseWindowFillSpriteIds[0] != MAX_SPRITES)
+    if (sMultiuseWindowSpriteIds[0] != MAX_SPRITES)
         return;
 
     // Top row: TopLeft, Middle * 5, TopRight
     for (i = 0; i < 3; i++)
     {
-        spriteId = CreateSprite(&sSpriteTemplate_MultiuseWindowFill, x + (i * 32), y, 0);
+        spriteId = CreateSprite(&sSpriteTemplate_MultiuseWindow, x + (i * 32), y, 0);
         if (spriteId != MAX_SPRITES)
         {
             if (i == 0)
@@ -6103,14 +6121,14 @@ static void CreateMultiuseWindowFillSprite(void)
 
             gSprites[spriteId].oam.priority = 1;
             gSprites[spriteId].subpriority = 0;
-            sMultiuseWindowFillSpriteIds[i] = spriteId;
+            sMultiuseWindowSpriteIds[i] = spriteId;
         }
     }
 
     // Bottom row: BottomLeft, Middle * 5, BottomRight
     for (i = 0; i < 3; i++)
     {
-        spriteId = CreateSprite(&sSpriteTemplate_MultiuseWindowFill, x + (i * 32), y + 16, 0);
+        spriteId = CreateSprite(&sSpriteTemplate_MultiuseWindow, x + (i * 32), y + 16, 0);
         if (spriteId != MAX_SPRITES)
         {
             if (i == 0)
@@ -6119,20 +6137,20 @@ static void CreateMultiuseWindowFillSprite(void)
                 StartSpriteAnim(&gSprites[spriteId], 3); // BottomRight
             gSprites[spriteId].oam.priority = 1;
             gSprites[spriteId].subpriority = 0;
-            sMultiuseWindowFillSpriteIds[3 + i] = spriteId;
+            sMultiuseWindowSpriteIds[3 + i] = spriteId;
         }
     }
 }
 
-static void DestroyMultiuseWindowFillSprite(void)
+static void DestroyMultiuseWindowSprite(void)
 {
     int i;
-    for (i = 0; i < ARRAY_COUNT(sMultiuseWindowFillSpriteIds); i++)
+    for (i = 0; i < ARRAY_COUNT(sMultiuseWindowSpriteIds); i++)
     {
-        if (sMultiuseWindowFillSpriteIds[i] != MAX_SPRITES)
+        if (sMultiuseWindowSpriteIds[i] != MAX_SPRITES)
         {
-            DestroySprite(&gSprites[sMultiuseWindowFillSpriteIds[i]]);
-            sMultiuseWindowFillSpriteIds[i] = MAX_SPRITES;
+            DestroySprite(&gSprites[sMultiuseWindowSpriteIds[i]]);
+            sMultiuseWindowSpriteIds[i] = MAX_SPRITES;
         }
     }
 }
@@ -6762,6 +6780,7 @@ void Task_AbilityCapsule(u8 taskId)
             // Don't exit party selections screen, return to choosing a mon.
             ClearStdWindowAndFrameToTransparent(6, 0);
             ClearWindowTilemap(6);
+            DestroyMessageWindowSprite();
             gTasks[taskId].func = (void *)GetWordTaskArg(taskId, tOldFunc);
             return;
         }
@@ -6848,6 +6867,7 @@ void Task_AbilityPatch(u8 taskId)
             // Don't exit party selections screen, return to choosing a mon.
             ClearStdWindowAndFrameToTransparent(6, 0);
             ClearWindowTilemap(6);
+            DestroyMessageWindowSprite();
             gTasks[taskId].func = (void *)GetWordTaskArg(taskId, tOldFunc);
             return;
         }
@@ -6947,6 +6967,7 @@ void Task_Mint(u8 taskId)
             // Don't exit party selections screen, return to choosing a mon.
             ClearStdWindowAndFrameToTransparent(6, 0);
             ClearWindowTilemap(6);
+            DestroyMessageWindowSprite();
             gTasks[taskId].func = (void *)GetWordTaskArg(taskId, tOldFunc);
             return;
         }
@@ -10228,8 +10249,8 @@ static void ClearHowManyItemsWindow(u8 taskId)
     ClearStdWindowAndFrameToTransparent(WIN_MSG, FALSE);
     ClearWindowTilemap(tWindowId);
     ClearWindowTilemap(WIN_MSG);
-    DestroyMessageWindowFillSprite();
-    DestroyMultiuseWindowFillSprite();
+    DestroyMessageWindowSprite();
+    DestroyMultiuseWindowSprite();
     FillBgTilemapBufferRect(2, 0, 23, 10, 6, 4, 13);
     ScheduleBgCopyTilemapToVram(2);
 }
@@ -10238,7 +10259,7 @@ static void PrintHowManyItemsWindow(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
 
-    CreateMultiuseWindowFillSprite();
+    CreateMultiuseWindowSprite();
     FillWindowPixelBuffer(tWindowId, PIXEL_FILL(0));
     ConvertIntToDecimalStringN(gStringVar1, tItemCount, STR_CONV_MODE_LEADING_ZEROS, MAX_ITEM_DIGITS);
     StringExpandPlaceholders(gStringVar3, gText_xVar1);
