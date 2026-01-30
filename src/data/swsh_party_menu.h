@@ -1371,10 +1371,10 @@ static const struct OamData sOamData_MessageWindow =
     .objMode = ST_OAM_OBJ_NORMAL,
     .mosaic = FALSE,
     .bpp = ST_OAM_4BPP,
-    .size = SPRITE_SIZE(32x16),
+    .size = SPRITE_SIZE(32x32),
     .x = 0,
     .matrixNum = 0,
-    .shape = SPRITE_SHAPE(32x16),
+    .shape = SPRITE_SHAPE(32x32),
     .tileNum = 0,
     .priority = 0,
     .paletteNum = 0,
@@ -1385,32 +1385,20 @@ static const union AnimCmd sSpriteAnim_MessageWindow_TopLeft[] = {
     ANIMCMD_FRAME(0, 0, FALSE, FALSE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MessageWindow_TopBody[] = {
+static const union AnimCmd sSpriteAnim_MessageWindow_TopMiddle[] = {
     ANIMCMD_FRAME(24, 0, FALSE, FALSE),
     ANIMCMD_END
 };
 static const union AnimCmd sSpriteAnim_MessageWindow_TopRight[] = {
-    ANIMCMD_FRAME(16, 0, TRUE, TRUE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_MessageWindow_MiddleLeft[] = {
-    ANIMCMD_FRAME(8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_MessageWindow_MiddleBody[] = {
-    ANIMCMD_FRAME(28, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_MessageWindow_MiddleRight[] = {
     ANIMCMD_FRAME(8, 0, TRUE, TRUE),
     ANIMCMD_END
 };
 static const union AnimCmd sSpriteAnim_MessageWindow_BottomLeft[] = {
-    ANIMCMD_FRAME(16, 0, FALSE, FALSE),
+    ANIMCMD_FRAME(8, 0, FALSE, FALSE),
     ANIMCMD_END
 };
-static const union AnimCmd sSpriteAnim_MessageWindow_BottomBody[] = {
-    ANIMCMD_FRAME(24, 0, TRUE, TRUE),
+static const union AnimCmd sSpriteAnim_MessageWindow_BottomMiddle[] = {
+    ANIMCMD_FRAME(24, 0, FALSE, TRUE),
     ANIMCMD_END
 };
 static const union AnimCmd sSpriteAnim_MessageWindow_BottomRight[] = {
@@ -1420,20 +1408,17 @@ static const union AnimCmd sSpriteAnim_MessageWindow_BottomRight[] = {
 
 static const union AnimCmd *const sSpriteAnimTable_MessageWindow[] = {
     sSpriteAnim_MessageWindow_TopLeft,
-    sSpriteAnim_MessageWindow_TopBody,
+    sSpriteAnim_MessageWindow_TopMiddle,
     sSpriteAnim_MessageWindow_TopRight,
-    sSpriteAnim_MessageWindow_MiddleLeft,
-    sSpriteAnim_MessageWindow_MiddleBody,
-    sSpriteAnim_MessageWindow_MiddleRight,
     sSpriteAnim_MessageWindow_BottomLeft,
-    sSpriteAnim_MessageWindow_BottomBody,
+    sSpriteAnim_MessageWindow_BottomMiddle,
     sSpriteAnim_MessageWindow_BottomRight,
 };
 
 static const struct CompressedSpriteSheet sSpriteSheet_MessageWindow =
 {
     .data = sMessageWindowGfx,
-    .size = (32 * 16 * 4 + 32 * 8) / 2,
+    .size = (32 * 16 * 5) / 2,
     .tag = TAG_MESSAGE_WINDOW,
 };
 

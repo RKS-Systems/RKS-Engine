@@ -277,7 +277,7 @@ static EWRAM_DATA u8 sFinalLevel = 0;
 static EWRAM_DATA u8 sHoverCursorSpriteId = 0;
 static EWRAM_DATA u8 sItemIconSpriteId = 0;
 static EWRAM_DATA u8 sSelectFrameSpriteIds[7] = {0}; // Left + 5 middle + Right
-static EWRAM_DATA u8 sMessageWindowSpriteIds[24] = {0}; // 8 across * 3 rows
+static EWRAM_DATA u8 sMessageWindowSpriteIds[16] = {0}; // 8 across * 2 rows
 static EWRAM_DATA u8 sMultiuseWindowSpriteIds[6] = {0}; // 3 across * 2 rows
 static EWRAM_DATA u8 sMonSpriteId = 0;
 static EWRAM_DATA u8 sMoveWindowIds[MAX_MON_MOVES];
@@ -3173,7 +3173,7 @@ static void DisplayPartyPokemonMoves(u8 windowId, struct Pokemon *mon, int m)
     struct SpriteTemplate template = sSpriteTemplate_MoveTypes;
     template.paletteTag = POKE_ICON_BASE_PAL_TAG + sMoveTypeToPalOffset[type];
     
-    sMoveTypeSpriteIds[m] = CreateSprite(&template, 204, 24 + 16 * m, 0);
+    sMoveTypeSpriteIds[m] = CreateSprite(&template, 204, 24 + 16 * m, 1);
     if (sMoveTypeSpriteIds[m] != MAX_SPRITES)
     {
         StartSpriteAnim(&gSprites[sMoveTypeSpriteIds[m]], type);
@@ -5227,7 +5227,7 @@ static void CreatePartyMonIconSpriteParameterized(u16 species, u32 pid, struct P
 {
     if (species != SPECIES_NONE)
     {
-        menuBox->monSpriteId = CreateMonIcon(species, SpriteCB_MonIcon, menuBox->spriteCoords[0], menuBox->spriteCoords[1], 4, pid);
+        menuBox->monSpriteId = CreateMonIcon(species, SpriteCB_MonIcon, menuBox->spriteCoords[0], menuBox->spriteCoords[1], 5, pid);
         gSprites[menuBox->monSpriteId].oam.priority = priority;
     }
 }
@@ -5326,7 +5326,7 @@ static void CreatePartyMonCustomItemIcon(struct PartyMenuBox *menuBox, u16 item)
         gSprites[spriteId].x = menuBox->spriteCoords[2];
         gSprites[spriteId].y = menuBox->spriteCoords[3];
         gSprites[spriteId].oam.priority = 1;
-        gSprites[spriteId].subpriority = 1;
+        gSprites[spriteId].subpriority = 2;
         
         gSprites[spriteId].oam.affineMode = ST_OAM_AFFINE_NORMAL;
         gSprites[spriteId].affineAnims = sAffineAnims_ItemIcon;
@@ -5348,7 +5348,7 @@ static void CreatePartyMonHeldItemSprite(struct Pokemon *mon, struct PartyMenuBo
         {
             menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 1);
             if (menuBox->itemSpriteId != MAX_SPRITES)
-                gSprites[menuBox->itemSpriteId].subpriority = 1;
+                gSprites[menuBox->itemSpriteId].subpriority = 2;
             UpdatePartyMonHeldItemSprite(mon, menuBox);
         }
     }
@@ -5368,7 +5368,7 @@ static void CreatePartyMonHeldItemSpriteParameterized(u16 species, u16 item, str
         {
             menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 1);
             gSprites[menuBox->itemSpriteId].oam.priority = 1;
-            gSprites[menuBox->itemSpriteId].subpriority = 1;
+            gSprites[menuBox->itemSpriteId].subpriority = 2;
             ShowOrHideHeldItemSprite(item, menuBox);
         }
     }
@@ -5416,7 +5416,7 @@ static void UpdatePartyMonHeldItemSprite(struct Pokemon *mon, struct PartyMenuBo
         {
             menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 1);
             if (menuBox->itemSpriteId != MAX_SPRITES)
-                gSprites[menuBox->itemSpriteId].subpriority = 1;
+                gSprites[menuBox->itemSpriteId].subpriority = 2;
         }
         
         if (menuBox->itemSpriteId != MAX_SPRITES)
@@ -5513,7 +5513,7 @@ static void CreateItemIconSprite(struct PartyMenuBox *menuBox, u8 slot, u16 item
             gSprites[sItemIconSpriteId].x = x;
             gSprites[sItemIconSpriteId].y = y;
             gSprites[sItemIconSpriteId].oam.priority = 1;
-            gSprites[sItemIconSpriteId].subpriority = 1;
+            gSprites[sItemIconSpriteId].subpriority = 2;
             if (sPartyMenuInternal->comfyAnimX != INVALID_COMFY_ANIM)
             {
                 ReleaseComfyAnim(sPartyMenuInternal->comfyAnimX);
@@ -5579,7 +5579,7 @@ static void CreateHoverSprite(struct PartyMenuBox *menuBox, u8 slot)
             if (sHoverCursorSpriteId != MAX_SPRITES)
             {
                 gSprites[sHoverCursorSpriteId].oam.priority = 1;
-                gSprites[sHoverCursorSpriteId].subpriority = 1;
+                gSprites[sHoverCursorSpriteId].subpriority = 2;
                 if (sPartyMenuInternal->comfyAnimX != INVALID_COMFY_ANIM)
                 {
                     ReleaseComfyAnim(sPartyMenuInternal->comfyAnimX);
@@ -5690,7 +5690,7 @@ static void CreateItemMoveSprite(u8 fromSlot, u8 toSlot, u16 itemId)
     if (sHoverCursorSpriteId != MAX_SPRITES)
     {
         gSprites[sHoverCursorSpriteId].oam.priority = 1;
-        gSprites[sHoverCursorSpriteId].subpriority = 1;
+        gSprites[sHoverCursorSpriteId].subpriority = 2;
         if (sPartyMenuInternal->comfyAnimX != INVALID_COMFY_ANIM)
         {
             ReleaseComfyAnim(sPartyMenuInternal->comfyAnimX);
@@ -5734,6 +5734,7 @@ static void CreateItemMoveSprite(u8 fromSlot, u8 toSlot, u16 itemId)
             sprite->x = sPartyMenuBoxes[fromSlot].spriteCoords[2];
             sprite->y = sPartyMenuBoxes[fromSlot].spriteCoords[3];
             sprite->oam.priority = 1;
+            sprite->subpriority = 1;
             InitItemSwapMotion(sprite, toSlot, TAG_HOVER_CURSOR + 20);
         }
     }
@@ -5748,6 +5749,7 @@ static void CreateItemMoveSprite(u8 fromSlot, u8 toSlot, u16 itemId)
             sprite->x = sPartyMenuBoxes[toSlot].spriteCoords[2];
             sprite->y = sPartyMenuBoxes[toSlot].spriteCoords[3];
             sprite->oam.priority = 1;
+            sprite->subpriority = 1;
             InitItemSwapMotion(sprite, fromSlot, TAG_SWITCH_ITEM_2);
         }
     }
@@ -5781,8 +5783,7 @@ void DrawHeldItemIconsForTrade(u8 *partyCounts, u8 *partySpriteIds, u8 whichPart
 
 static void CreateHeldItemSpriteForTrade(u8 spriteId, bool8 isMail)
 {
-    u8 subpriority = gSprites[spriteId].subpriority;
-    u8 newSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, 250, 170, subpriority - 1);
+    u8 newSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, 250, 170, 4);
 
     gSprites[newSpriteId].x2 = 4;
     gSprites[newSpriteId].y2 = 10;
@@ -5817,7 +5818,7 @@ static void PartyMenuStartSpriteAnim(u8 spriteId, u8 animNum)
 static void CreateMessageWindowSprite(void)
 {
     s16 x=16;
-    s16 y=120;
+    s16 y=128;
     int i;
     u8 spriteId;
 
@@ -5826,40 +5827,31 @@ static void CreateMessageWindowSprite(void)
 
     for (i = 0; i < ARRAY_COUNT(sMessageWindowSpriteIds); i++)
     {
+        u8 row = i / 8;
+        u8 col = i % 8;
         u8 animNum;
-        u8 subpriority;
         s16 spriteX, spriteY;
 
-        if (i < 21) // Main body (Left + Middle)
-        {
-            u8 row = i / 7;
-            u8 col = i % 7;
-            
+        if (col <= 4)
             spriteX = x + (col * 32);
-            spriteY = y + (row * 16);
-            subpriority = (row == 0) ? 0 : 1;
+        else
+            spriteX = x + (4 * 32) + 16 + ((col - 5) * 32);
 
-            if (col == 0) // Left edge
-                animNum = (row == 0) ? 0 : (row == 1) ? 3 : 6;
-            else // Body
-                animNum = (row == 0) ? 1 : (row == 1) ? 4 : 7;
-        }
-        else // Right column (TopRight, MiddleRight, BottomRight)
-        {
-            u8 row = i - 21;
-            
-            spriteX = 224;
-            spriteY = y + (row * 16);
-            subpriority = 0;
-            animNum = (row == 0) ? 2 : (row == 1) ? 5 : 8;
-        }
+        spriteY = y + (row * 16);
+
+        if (col == 0) // Left edge
+            animNum = (row == 0) ? 0 : 3;
+        else if (col == 7) // Right edge
+            animNum = (row == 0) ? 2 : 5;
+        else // Middle body
+            animNum = (row == 0) ? 1 : 4;
 
         spriteId = CreateSprite(&sSpriteTemplate_MessageWindow, spriteX, spriteY, 0);
         if (spriteId != MAX_SPRITES)
         {
             StartSpriteAnim(&gSprites[spriteId], animNum);
             gSprites[spriteId].oam.priority = 1;
-            gSprites[spriteId].subpriority = subpriority;
+            gSprites[spriteId].subpriority = 0;
             sMessageWindowSpriteIds[i] = spriteId;
         }
     }
@@ -5967,7 +5959,7 @@ static void CreateSelectFrame(struct PartyMenuBox *menuBox, u8 slot)
         {
             StartSpriteAnim(&gSprites[sSelectFrameSpriteIds[i]], animNum);
             gSprites[sSelectFrameSpriteIds[i]].oam.priority = 1;
-            gSprites[sSelectFrameSpriteIds[i]].subpriority = 20;
+            gSprites[sSelectFrameSpriteIds[i]].subpriority = 6;
         }
     }
 }
@@ -5980,7 +5972,7 @@ static void CreatePartyMonStatusSprite(struct Pokemon *mon, struct PartyMenuBox 
         if (menuBox->statusSpriteId != MAX_SPRITES)
         {
             gSprites[menuBox->statusSpriteId].oam.priority = 1;
-            gSprites[menuBox->statusSpriteId].subpriority = 1;
+            gSprites[menuBox->statusSpriteId].subpriority = 2;
         }
         SetPartyMonAilmentGfx(mon, menuBox);
     }
@@ -5993,7 +5985,7 @@ static void CreatePartyMonStatusSpriteParameterized(u16 species, u8 status, stru
         menuBox->statusSpriteId = CreateSprite(&gSpriteTemplate_StatusIcons, menuBox->spriteCoords[4], menuBox->spriteCoords[5], 1);
         UpdatePartyMonAilmentGfx(status, menuBox);
         gSprites[menuBox->statusSpriteId].oam.priority = 1;
-        gSprites[menuBox->statusSpriteId].subpriority = 2;
+        gSprites[menuBox->statusSpriteId].subpriority = 3;
     }
 }
 
@@ -6060,11 +6052,11 @@ static u8 CreateMonSprite(struct Pokemon *mon, bool32 isShadow)
         gSprites[spriteId].oam.priority = 1;
         if (isShadow)
         {
-            gSprites[spriteId].subpriority = 21;
+            gSprites[spriteId].subpriority = 7;
         }
         else
         {
-            gSprites[spriteId].subpriority = 20;
+            gSprites[spriteId].subpriority = 6;
         }
         gSprites[spriteId].callback = SpriteCB_PartyMonPokemon;
         if (isShadow)
