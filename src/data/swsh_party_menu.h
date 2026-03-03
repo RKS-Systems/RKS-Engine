@@ -758,6 +758,17 @@ static const struct WindowTemplate sDefaultPartyMsgWindowTemplate =
     .baseBlock = 0x1FD,
 };
 
+static const struct WindowTemplate sWindowTemplate_FirstBattleOakVoiceover =
+{
+    .bg = 2,
+    .tilemapLeft = 2,
+    .tilemapTop = 15,
+    .width = 26,
+    .height = 4,
+    .paletteNum = 14,
+    .baseBlock = 0x1DF,
+};
+
 // static const struct WindowTemplate sDoWhatWithMonMsgWindowTemplate =
 // {
 //     .bg = 2,

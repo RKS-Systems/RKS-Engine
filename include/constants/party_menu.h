@@ -6,6 +6,7 @@
 #define SWSH_PARTY_MON_IDLE_ANIMS         TRUE
 #define SWSH_PARTY_MON_IDLE_ANIMS_FRAMES  300 // Number of frames before mon animation loops
 
+#define PC_MON_CHOSEN 0xFE
 #define PARTY_NOTHING_CHOSEN 0xFF
 
 #define AILMENT_NONE  0
@@ -116,5 +117,23 @@
 #define SELECTWINDOW_MOVES       3
 #define SELECTWINDOW_CATALOG     4
 #define SELECTWINDOW_ZYGARDECUBE 5
+
+enum PcMonSelectionType
+{
+    SELECT_PC_MON_NORMAL,
+    SELECT_PC_MON_TRADE, // Also used for Lotad / Seedot size check
+    SELECT_PC_MON_DAYCARE,
+    SELECT_PC_MON_MOVE_TUTOR,
+    SELECT_PC_MON_MOVE_DELETER,
+    SELECT_PC_MON_MOVE_RELEARNER,
+};
+
+enum CanMoveBeLearned
+{
+    CAN_LEARN_MOVE,
+    CANNOT_LEARN_MOVE,
+    ALREADY_KNOWS_MOVE,
+    CANNOT_LEARN_MOVE_IS_EGG
+};
 
 #endif // GUARD_CONSTANTS_PARTY_MENU_H
