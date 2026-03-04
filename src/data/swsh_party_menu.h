@@ -1275,9 +1275,6 @@ static const struct SpriteTemplate sSpriteTemplate_HeldItem =
     .paletteTag = TAG_HELD_ITEM,
     .oam = &sOamData_HeldItem,
     .anims = sSpriteAnimTable_HeldItem,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy
 };
 
 static const struct OamData sOamData_HoverCursor =
@@ -1309,10 +1306,6 @@ static const struct SpriteTemplate sSpriteTemplate_HoverCursor =
     .tileTag = TAG_HOVER_CURSOR,
     .paletteTag = TAG_HELD_ITEM,
     .oam = &sOamData_HoverCursor,
-    .anims = gDummySpriteAnimTable,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy
 };
 
 static const struct OamData sOamData_SelectFrame =
@@ -1370,9 +1363,6 @@ static const struct SpriteTemplate sSpriteTemplate_SelectFrame =
     .paletteTag = TAG_HELD_ITEM,
     .oam = &sOamData_SelectFrame,
     .anims = sSpriteAnimTable_SelectFrame,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
 };
 
 static const struct OamData sOamData_MessageWindow =
@@ -1445,9 +1435,6 @@ static const struct SpriteTemplate sSpriteTemplate_MessageWindow =
     .paletteTag = TAG_HELD_ITEM,
     .oam = &sOamData_MessageWindow,
     .anims = sSpriteAnimTable_MessageWindow,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
 };
 
 static const struct OamData sOamData_MultiuseWindow =
@@ -1510,153 +1497,12 @@ static const struct SpriteTemplate sSpriteTemplate_MultiuseWindow =
     .paletteTag = TAG_HELD_ITEM,
     .oam = &sOamData_MultiuseWindow,
     .anims = sSpriteAnimTable_MultiuseWindow,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
 };
 
 static const struct SpritePalette sSpritePal_PartyMonShadow =
 {
     .data = sMonShadowPalette,
     .tag = TAG_MON_SHADOW
-};
-
-static const struct OamData sOamData_MenuPokeball =
-{
-    .y = 0,
-    .affineMode = ST_OAM_AFFINE_OFF,
-    .objMode = ST_OAM_OBJ_NORMAL,
-    .mosaic = FALSE,
-    .bpp = ST_OAM_4BPP,
-    .shape = SPRITE_SHAPE(32x32),
-    .x = 0,
-    .matrixNum = 0,
-    .size = SPRITE_SIZE(32x32),
-    .tileNum = 0,
-    .priority = 1,
-    .paletteNum = 0,
-    .affineParam = 0
-};
-
-static const union AnimCmd sPokeballAnim_Closed[] =
-{
-    ANIMCMD_FRAME(0, 0),
-    ANIMCMD_END
-};
-
-static const union AnimCmd sPokeballAnim_Open[] =
-{
-    ANIMCMD_FRAME(16, 0),
-    ANIMCMD_END
-};
-
-static const union AnimCmd *const sSpriteAnimTable_MenuPokeball[] =
-{
-    sPokeballAnim_Closed,
-    sPokeballAnim_Open
-};
-
-static const struct CompressedSpriteSheet sSpriteSheet_MenuPokeball =
-{
-    gPartyMenuPokeball_Gfx, 0x400, TAG_POKEBALL
-};
-
-static const struct SpritePalette sSpritePalette_MenuPokeball =
-{
-    gPartyMenuPokeball_Pal, TAG_POKEBALL
-};
-
-// Used for the Poké Ball sprite on each party slot / Cancel button
-static const struct SpriteTemplate sSpriteTemplate_MenuPokeball =
-{
-    .tileTag = TAG_POKEBALL,
-    .paletteTag = TAG_POKEBALL,
-    .oam = &sOamData_MenuPokeball,
-    .anims = sSpriteAnimTable_MenuPokeball,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
-};
-
-static const struct OamData sOamData_MenuPokeballSmall =
-{
-    .y = 0,
-    .affineMode = ST_OAM_AFFINE_OFF,
-    .objMode = ST_OAM_OBJ_NORMAL,
-    .mosaic = FALSE,
-    .bpp = ST_OAM_4BPP,
-    .shape = SPRITE_SHAPE(16x16),
-    .x = 0,
-    .matrixNum = 0,
-    .size = SPRITE_SIZE(16x16),
-    .tileNum = 0,
-    .priority = 2,
-    .paletteNum = 0,
-    .affineParam = 0
-};
-
-static const union AnimCmd sSmallPokeballAnim_Closed[] =
-{
-    ANIMCMD_FRAME(0, 0),
-    ANIMCMD_END
-};
-
-static const union AnimCmd sSmallPokeballAnim_Open[] =
-{
-    ANIMCMD_FRAME(4, 0),
-    ANIMCMD_END
-};
-
-static const union AnimCmd sSmallPokeballAnim_Blank1[] =
-{
-    ANIMCMD_FRAME(8, 0),
-    ANIMCMD_END
-};
-
-static const union AnimCmd sSmallPokeballAnim_Blank2[] =
-{
-    ANIMCMD_FRAME(12, 0),
-    ANIMCMD_END
-};
-
-static const union AnimCmd sSmallPokeballAnim_Blank3[] =
-{
-    ANIMCMD_FRAME(16, 0),
-    ANIMCMD_END
-};
-
-static const union AnimCmd sSmallPokeballAnim_Blank4[] =
-{
-    ANIMCMD_FRAME(20, 0),
-    ANIMCMD_END
-};
-
-// The blanks below are never used. See SpriteCB_BounceConfirmCancelButton, where they were intended to be used
-static const union AnimCmd *const sSpriteAnimTable_MenuPokeballSmall[] =
-{
-    sSmallPokeballAnim_Closed,
-    sSmallPokeballAnim_Open,
-    sSmallPokeballAnim_Blank1,
-    sSmallPokeballAnim_Blank2,
-    sSmallPokeballAnim_Blank3,
-    sSmallPokeballAnim_Blank4
-};
-
-static const struct CompressedSpriteSheet sSpriteSheet_MenuPokeballSmall =
-{
-    gPartyMenuPokeballSmall_Gfx, 0x0300, TAG_POKEBALL_SMALL
-};
-
-// Used for the pokeball sprite next to Cancel and Confirm when both are present, otherwise sSpriteTemplate_MenuPokeball is used
-static const struct SpriteTemplate sSpriteTemplate_MenuPokeballSmall =
-{
-    .tileTag = TAG_POKEBALL_SMALL,
-    .paletteTag = TAG_POKEBALL,
-    .oam = &sOamData_MenuPokeballSmall,
-    .anims = sSpriteAnimTable_MenuPokeballSmall,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
 };
 
 static const struct OamData sOamData_StatusCondition =
@@ -1759,9 +1605,6 @@ const struct SpriteTemplate gSpriteTemplate_StatusIcons =
     .paletteTag = TAG_HELD_ITEM,
     .oam = &sOamData_StatusCondition,
     .anims = sSpriteTemplate_StatusCondition,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy,
 };
 
 static const struct OamData sOamData_MoveTypes =
@@ -1867,27 +1710,27 @@ static const union AnimCmd sSpriteAnim_TypeStellar[] = {
 };
 
 static const union AnimCmd *const sSpriteAnimTable_MoveTypes[NUMBER_OF_MON_TYPES] = {
-    [TYPE_NONE] = sSpriteAnim_TypeNone,
-    [TYPE_NORMAL] = sSpriteAnim_TypeNormal,
+    [TYPE_NONE]     = sSpriteAnim_TypeNone,
+    [TYPE_NORMAL]   = sSpriteAnim_TypeNormal,
     [TYPE_FIGHTING] = sSpriteAnim_TypeFighting,
-    [TYPE_FLYING] = sSpriteAnim_TypeFlying,
-    [TYPE_POISON] = sSpriteAnim_TypePoison,
-    [TYPE_GROUND] = sSpriteAnim_TypeGround,
-    [TYPE_ROCK] = sSpriteAnim_TypeRock,
-    [TYPE_BUG] = sSpriteAnim_TypeBug,
-    [TYPE_GHOST] = sSpriteAnim_TypeGhost,
-    [TYPE_STEEL] = sSpriteAnim_TypeSteel,
-    [TYPE_MYSTERY] = sSpriteAnim_TypeMystery,
-    [TYPE_FIRE] = sSpriteAnim_TypeFire,
-    [TYPE_WATER] = sSpriteAnim_TypeWater,
-    [TYPE_GRASS] = sSpriteAnim_TypeGrass,
+    [TYPE_FLYING]   = sSpriteAnim_TypeFlying,
+    [TYPE_POISON]   = sSpriteAnim_TypePoison,
+    [TYPE_GROUND]   = sSpriteAnim_TypeGround,
+    [TYPE_ROCK]     = sSpriteAnim_TypeRock,
+    [TYPE_BUG]      = sSpriteAnim_TypeBug,
+    [TYPE_GHOST]    = sSpriteAnim_TypeGhost,
+    [TYPE_STEEL]    = sSpriteAnim_TypeSteel,
+    [TYPE_MYSTERY]  = sSpriteAnim_TypeMystery,
+    [TYPE_FIRE]     = sSpriteAnim_TypeFire,
+    [TYPE_WATER]    = sSpriteAnim_TypeWater,
+    [TYPE_GRASS]    = sSpriteAnim_TypeGrass,
     [TYPE_ELECTRIC] = sSpriteAnim_TypeElectric,
-    [TYPE_PSYCHIC] = sSpriteAnim_TypePsychic,
-    [TYPE_ICE] = sSpriteAnim_TypeIce,
-    [TYPE_DRAGON] = sSpriteAnim_TypeDragon,
-    [TYPE_DARK] = sSpriteAnim_TypeDark,
-    [TYPE_FAIRY] = sSpriteAnim_TypeFairy,
-    [TYPE_STELLAR] = sSpriteAnim_TypeStellar,
+    [TYPE_PSYCHIC]  = sSpriteAnim_TypePsychic,
+    [TYPE_ICE]      = sSpriteAnim_TypeIce,
+    [TYPE_DRAGON]   = sSpriteAnim_TypeDragon,
+    [TYPE_DARK]     = sSpriteAnim_TypeDark,
+    [TYPE_FAIRY]    = sSpriteAnim_TypeFairy,
+    [TYPE_STELLAR]  = sSpriteAnim_TypeStellar,
 };
 
 static const u8 sMoveTypeToPalOffset[NUMBER_OF_MON_TYPES] =
@@ -1918,9 +1761,6 @@ static const struct SpriteTemplate sSpriteTemplate_MoveTypes =
     .paletteTag = POKE_ICON_BASE_PAL_TAG,
     .oam = &sOamData_MoveTypes,
     .anims = sSpriteAnimTable_MoveTypes,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy
 };
 
 static const u8 *const sUnused_StatStrings[] =
