@@ -142,7 +142,6 @@
 
 #define NUM_DEX_FLAG_BYTES_VANILLA 0x34
 #define NUM_DEX_FLAG_BYTES_NEW (ROUND_BITS_TO_BYTES(NUM_SPECIES) - NUM_DEX_FLAG_BYTES_VANILLA)
-
 #define NUM_FLAG_BYTES ROUND_BITS_TO_BYTES(FLAGS_COUNT)
 #define NUM_TRENDY_SAYING_BYTES ROUND_BITS_TO_BYTES(NUM_TRENDY_SAYINGS)
 
@@ -1182,7 +1181,9 @@ struct SaveBlock1
 #if FREE_MYSTERY_GIFT == FALSE
     /*0x322C*/ struct MysteryGiftSave mysteryGift;
 #endif //FREE_MYSTERY_GIFT
-    /*0x3598*/ u8 unused_3598[0x180];
+    /*0x3598*/ u8 unused_3598[94];
+    /*0x3598*/ u8 seenExtended[145];
+    /*0x3598*/ u8 caughtExtended[145];
 #if FREE_TRAINER_HILL == FALSE
     /*0x3718*/ u32 trainerHillTimes[NUM_TRAINER_HILL_MODES];
 #endif //FREE_TRAINER_HILL
