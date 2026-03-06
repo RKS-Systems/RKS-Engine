@@ -1716,6 +1716,7 @@
 #define SPECIES_EGG                                     (SPECIES_GLIMMORA_MEGA + 1)
 
 #define NUM_SPECIES SPECIES_EGG
+#define NUM_VANILLA_SPECIES (SPECIES_CHIMECHO + 1)
 
 #define SPECIES_SHINY_TAG 5000
 
