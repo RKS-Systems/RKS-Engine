@@ -2,7 +2,7 @@
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_ai_main.h"
-#include "battle_ai_util.h"
+#include "battle_ai_record.h"
 #include "battle_arena.h"
 #include "battle_controllers.h"
 #include "battle_end_turn.h"
@@ -5158,7 +5158,7 @@ static void TurnValuesCleanUp(bool8 var0)
     ClearDamageCalcResults();
 }
 
-static void PopulateArrayWithBattlers(u8 *battlers)
+static void PopulateArrayWithBattlers(enum BattlerId *battlers)
 {
     for (enum BattlerId i = 0; i < gBattlersCount; i++)
         battlers[i] = i;
