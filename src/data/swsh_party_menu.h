@@ -91,39 +91,11 @@ static const struct BgTemplate sPartyMenuBgTemplates[] =
 
 static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
 {
-    [PARTY_BOX_LEFT_COLUMN] =
-    {
-        BlitBitmapToPartyWindow_LeftColumn,
-        {
-            //The below are the x, y, width, and height for each of the following info
-            24, 11, 40, 13, // Nickname
-            32, 20, 32,  8, // Level
-            64, 20,  8,  8, // Gender
-            38, 37, 24,  8, // HP
-            53, 37, 24,  8, // Max HP
-            24, 35, 48,  3  // HP bar
-        },
-        12, 34, 64, 16      // Description text (e.g. NO USE)
-    },
-    [PARTY_BOX_RIGHT_COLUMN] =
-    {
-        BlitBitmapToPartyWindow_RightColumn,
-        {
-             // See above comment
-             22,  3, 40, 13, // Nickname
-             30, 12, 32,  8, // Level
-             62, 12,  8,  8, // Gender
-            102, 12, 24,  8, // HP
-            117, 12, 24,  8, // Max HP
-             88, 10, 48,  3  // HP bar
-        },
-        77, 4, 64, 16        // Description text
-    },
     [PARTY_BOX_SWSH_COLUMN] =
     {
         BlitBitmapToPartyWindow_SwSh,
         {
-            // See above comment
+            //The below are the x, y, width, and height for each of the following info
             32,  0, 48, 13, // Nickname
             80, 11, 32,  8, // Level
             91,  0,  8,  8, // Gender
@@ -131,7 +103,7 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
             47, 11, 24,  8, // Max HP
             32, 12, 64,  2  // HP bar
         },
-        32, 10, 64, 12        // Description text
+        32, 11, 64, 12        // Description text
     }
 };
 
@@ -1085,9 +1057,11 @@ static const u8 *const sActionStringTable[] =
     [PARTY_MSG_MOVE_ITEM_WHERE]        = gText_MoveItemWhere,
 };
 
+static const u8 sText_NoUse[] = _("NO USE");
+
 static const u8 *const sDescriptionStringTable[] =
 {
-    [PARTYBOX_DESC_NO_USE]     = gText_NoUse,
+    [PARTYBOX_DESC_NO_USE]     = sText_NoUse,
     [PARTYBOX_DESC_ABLE_3]     = gText_Able,
     [PARTYBOX_DESC_FIRST]      = gText_First_PM,
     [PARTYBOX_DESC_SECOND]     = gText_Second_PM,
