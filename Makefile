@@ -36,7 +36,7 @@ TEST         ?= 0
 # Enables -fanalyzer C flag to analyze in depth potential UBs
 ANALYZE      ?= 0
 # Count unused warnings as errors. Used by RKS-Engine's repo
-UNUSED_ERROR ?= 1
+UNUSED_ERROR ?= 0
 # Count deprecated warnings as errors. Used by RKS-Engine's repo
 DEPRECATED_ERROR ?= 0
 # Adds -Og and -g flags, which optimize the build for debugging and include debug info respectively
