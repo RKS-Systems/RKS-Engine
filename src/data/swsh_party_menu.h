@@ -143,9 +143,9 @@ static const u8 sPartyMenuSpriteCoords[PARTY_LAYOUT_COUNT][PARTY_SIZE][4 * 2] =
     [PARTY_LAYOUT_MULTI_SHOWCASE] =
     {
         { 26,  18,  32,  28, 100,  27,  16,  26},
-        { 34,  42,  40,  52, 108,  51, 102,  41},
         { 34,  66,  40,  76, 108,  75, 102,  65},
-        { 26,  90,  32, 100, 100,  99,  16,  98},
+        { 34,  90,  40, 100, 108,  99, 102,  98},
+        { 26,  42,  32,  52, 100,  51,  16,  41},
         { 34, 114,  40, 124, 108, 123, 102, 113},
         { 34, 138,  40, 148, 108, 147, 102, 137},
     },
@@ -674,7 +674,7 @@ static const struct WindowTemplate sShowcaseMultiPartyMenuWindowTemplate_SwSh[] 
     { // Party mon 2
         .bg = 0,
         .tilemapLeft = 2,
-        .tilemapTop = 4,
+        .tilemapTop = 7,
         .width = 14,
         .height = 3,
         .paletteNum = 5,
@@ -683,7 +683,7 @@ static const struct WindowTemplate sShowcaseMultiPartyMenuWindowTemplate_SwSh[] 
     { // Party mon 3
         .bg = 0,
         .tilemapLeft = 2,
-        .tilemapTop = 7,
+        .tilemapTop = 10,
         .width = 14,
         .height = 3,
         .paletteNum = 6,
@@ -692,7 +692,7 @@ static const struct WindowTemplate sShowcaseMultiPartyMenuWindowTemplate_SwSh[] 
     { // Party mon 4
         .bg = 2,
         .tilemapLeft = 1,
-        .tilemapTop = 10,
+        .tilemapTop = 4,
         .width = 14,
         .height = 3,
         .paletteNum = 4,

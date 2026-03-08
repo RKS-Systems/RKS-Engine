@@ -7789,7 +7789,7 @@ void ItemUseCB_EvolutionStone(u8 taskId, TaskFunc task)
 #define forgetMove           data[14]
 #define storageIndex         data[15]
 
-#define MOSAIC_ANIM_DURATION 60
+#define MOSAIC_ANIM_DURATION 15
 
 static void SpriteCB_MosaicAnim(struct Sprite *sprite)
 {
