@@ -1,6 +1,11 @@
 #ifndef GUARD_CONSTANTS_PARTY_MENU_H
 #define GUARD_CONSTANTS_PARTY_MENU_H
 
+#define SWSH_PARTY_MENU                   TRUE
+#define SWSH_PARTY_MENU_PC_ACCESS         TRUE
+#define SWSH_PARTY_MON_IDLE_ANIMS         TRUE
+#define SWSH_PARTY_MON_IDLE_ANIMS_FRAMES  300 // Number of frames before mon animation loops
+
 #define PC_MON_CHOSEN 0xFE
 #define PARTY_NOTHING_CHOSEN 0xFF
 
@@ -51,6 +56,8 @@
 #define PARTY_ACTION_MINIGAME           13
 #define PARTY_ACTION_SEND_MON_TO_BOX    14
 #define PARTY_ACTION_CHOOSE_FAINTED_MON 15
+#define PARTY_ACTION_MOVE_ITEM          16
+#define PARTY_ACTION_FUSION             17
 
 // IDs for DisplayPartyMenuStdMessage, to display the message at the bottom of the party menu
 #define PARTY_MSG_CHOOSE_MON                0
@@ -85,6 +92,7 @@
 #define PARTY_MSG_NO_POKEMON                29
 #define PARTY_MSG_CHOOSE_MON_FOR_BOX        30
 #define PARTY_MSG_MOVE_ITEM_WHERE           31
+#define PARTY_MSG_SEND_MON_TO_BOX           32
 
 #define PARTY_MSG_NONE                      127
 
