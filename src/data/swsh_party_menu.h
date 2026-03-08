@@ -24,17 +24,12 @@ static const struct OamData sOamData_Button = {
     .priority = 0,
 };
 
-#if SWSH_PARTY_MENU == TRUE
 static const u32 sStatusGfx_Icons_SwSh[] = INCBIN_U32("graphics/party_menu/swsh/status_icons.4bpp.smol");
 // Palette loaded to keep with vanilla structure, but not actually used
 static const u16 sStatusPal_Icons_SwSh[] = INCBIN_U16("graphics/party_menu/swsh/status_icons.gbapal");
 
 static const u32 sHeldItemGfx[]          = INCBIN_U32("graphics/party_menu/swsh/hold_icons.4bpp");
 const u16 gHeldItemPalette[]             = INCBIN_U16("graphics/party_menu/swsh/hold_icons.gbapal");
-#else
-static const u32 sHeldItemGfx[]          = INCBIN_U32("graphics/party_menu/hold_icons.4bpp");
-const u16 gHeldItemPalette[]             = INCBIN_U16("graphics/party_menu/hold_icons.gbapal");
-#endif
 
 static const u32 sHoverCursorGfx[]        = INCBIN_U32("graphics/party_menu/swsh/hover_cursor.4bpp.smol");
 static const u32 sSelectFrameGfx[]        = INCBIN_U32("graphics/party_menu/swsh/select_frame.4bpp.smol");
@@ -1558,11 +1553,7 @@ static const union AnimCmd *const sSpriteTemplate_StatusCondition[] =
 
 static const struct CompressedSpriteSheet sSpriteSheet_StatusIcons =
 {
-#if SWSH_PARTY_MENU == TRUE
     .data = sStatusGfx_Icons_SwSh,
-#else
-    .data = gStatusGfx_Icons,
-#endif
     .size = 0x400,
     .tag = TAG_STATUS_ICONS
 };
