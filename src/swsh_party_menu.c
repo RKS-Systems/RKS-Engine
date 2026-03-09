@@ -749,11 +749,8 @@ static void VBlankCB_PartyMenu(void)
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
-    if (SWSH_PARTY_MENU)
-    {
-        ChangeBgX(3, 64, BG_COORD_ADD);
-        ChangeBgY(3, 64, BG_COORD_ADD);
-    }
+    ChangeBgX(3, 64, BG_COORD_ADD);
+    ChangeBgY(3, 64, BG_COORD_ADD);
     if (SWSH_PARTY_MON_IDLE_ANIMS && sMonSpriteId != 0 && sMonSpriteId != MAX_SPRITES)
     {
         RunMonAnimTimer();
@@ -1346,7 +1343,7 @@ static void RenderPartyMenuBox(u8 slot)
                 AnimatePartySlot(slot, 0);
         }
         PutWindowTilemap(sPartyMenuBoxes[slot].windowId);
-        if (SWSH_PARTY_MENU && gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE && gPartyMenu.slotId == slot)
+        if (gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE && gPartyMenu.slotId == slot)
         {
             UpdatePartyMoveWindows(slot);
         }
@@ -1393,7 +1390,7 @@ static void UpdatePartyMoveWindows(u8 slot)
     int m;
     const u8 *tm;
 
-    if (gPartyMenu.menuType != PARTY_MENU_TYPE_IN_BATTLE || !SWSH_PARTY_MENU)
+    if (gPartyMenu.menuType != PARTY_MENU_TYPE_IN_BATTLE)
         return;
 
     DestroyMoveTypeSprites();
@@ -2283,7 +2280,7 @@ static void UpdateCurrentPartySelection(s8 *slotPtr, s8 movementDir)
         AnimatePartySlot(newSlotId, 0);
         AnimatePartySlot(*slotPtr, 1);
         CreateHoverSprite(&sPartyMenuBoxes[*slotPtr], *slotPtr);
-        if (gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE && SWSH_PARTY_MENU)
+        if (gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE)
             UpdatePartyMoveWindows(*slotPtr);
 
         UpdatePartyMonSprite(*slotPtr);
@@ -2832,7 +2829,7 @@ static void LoadPartyMenuWindows(void)
     LoadPalette(GetOverworldTextboxPalettePtr(), BG_PLTT_ID(14), PLTT_SIZE_4BPP);
     LoadPalette(gStandardMenuPalette, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
 
-    if (gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE && SWSH_PARTY_MENU)
+    if (gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE)
     {
         int i;
         for (i = 0; i < MAX_MON_MOVES; ++i)
@@ -3043,10 +3040,7 @@ static void BlitBitmapToPartyMoveWindow_SwSh(u8 windowId, u8 x, u8 y, u8 width, 
 
 static void DrawEmptySlot(u8 windowId)
 {
-    if (SWSH_PARTY_MENU)
-        BlitBitmapToPartyWindow(windowId, sSlotTilemap_Empty_SwSh, 14, 0, 0, 14, 3);
-    else
-        BlitBitmapToPartyWindow(windowId, sSlotTilemap_WideEmpty, 18, 0, 0, 18, 3);
+    BlitBitmapToPartyWindow(windowId, sSlotTilemap_Empty_SwSh, 14, 0, 0, 14, 3);
 }
 
 #define LOAD_PARTY_BOX_PAL(paletteIds, paletteOffsets)                                                    \
@@ -3349,15 +3343,6 @@ static void DisplayPartyPokemonHPCheck(struct Pokemon *mon, struct PartyMenuBox 
     }
 }
 
-static void DisplayParty4DigitsHP(struct PartyMenuBox *menuBox, const u8 *str, const u8 *origAlings, u32 toSub)
-{
-    u8 newAligns[4];
-
-    memcpy(newAligns, origAlings, sizeof(newAligns));
-    newAligns[0] -= toSub; // x, so that the hp fits
-    DisplayPartyPokemonBarDetail(menuBox->windowId, str, 0, newAligns);
-}
-
 static void DisplayParty4DigitsHP_ShiftRight(struct PartyMenuBox *menuBox, const u8 *str, const u8 *origAlings, u32 toAdd)
 {
     u8 newAligns[4];
@@ -3370,16 +3355,12 @@ static void DisplayParty4DigitsHP_ShiftRight(struct PartyMenuBox *menuBox, const
 static void DisplayPartyPokemonHP(u16 hp, u16 maxhp, struct PartyMenuBox *menuBox)
 {
     bool32 fourDigits = (maxhp >= 1000);
-    bool32 isSwShBox = (SWSH_PARTY_MENU);
     u8 *strOut = ConvertIntToDecimalStringN(gStringVar1, hp, STR_CONV_MODE_RIGHT_ALIGN, fourDigits ? 4 : 3);
 
     strOut[0] = CHAR_SLASH;
     strOut[1] = EOS;
 
-    if (fourDigits && !isSwShBox)
-        DisplayParty4DigitsHP(menuBox, gStringVar1, &menuBox->infoRects->dimensions[12], 10);
-    else
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[12]);
+    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[12]);
 }
 
 static void DisplayPartyPokemonMaxHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
@@ -3396,19 +3377,13 @@ static void DisplayPartyPokemonMaxHPCheck(struct Pokemon *mon, struct PartyMenuB
 static void DisplayPartyPokemonMaxHP(u16 maxhp, struct PartyMenuBox *menuBox)
 {
     bool32 fourDigits = (maxhp >= 1000);
-    bool32 isSwShBox = (SWSH_PARTY_MENU);
 
     ConvertIntToDecimalStringN(gStringVar2, maxhp, STR_CONV_MODE_RIGHT_ALIGN, fourDigits ? 4 : 3);
     StringCopy(gStringVar1, gText_Slash);
     StringAppend(gStringVar1, gStringVar2);
 
     if (fourDigits)
-    {
-        if (isSwShBox)
-            DisplayParty4DigitsHP_ShiftRight(menuBox, gStringVar1, &menuBox->infoRects->dimensions[16], 5);
-        else
-            DisplayParty4DigitsHP(menuBox, gStringVar1, &menuBox->infoRects->dimensions[16], 5);
-    }
+        DisplayParty4DigitsHP_ShiftRight(menuBox, gStringVar1, &menuBox->infoRects->dimensions[16], 5);
     else
         DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[16]);
 }
@@ -3460,28 +3435,18 @@ static void DisplayPartyPokemonDescriptionText(u8 stringID, struct PartyMenuBox 
         menuBox->infoRects->blitFunc(menuBox->windowId, menuBox->infoRects->descTextLeft >> 3, menuBox->infoRects->descTextTop >> 3, width, height, TRUE);
 
         // Redraw nickname, gender, and level after clearing area for description area (for SWSH layout where their windows overlap)
-        if (SWSH_PARTY_MENU)
+        u8 slot = menuBox->windowId;
+        struct Pokemon *mon = &gPlayerParty[slot];
+        if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
         {
-            u8 slot = menuBox->windowId;
-            struct Pokemon *mon = &gPlayerParty[slot];
-            if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
-            {
-                DisplayPartyPokemonNickname(mon, menuBox, 0);
-                DisplayPartyPokemonGenderNidoranCheck(mon, menuBox, 0);
-                DisplayPartyPokemonLevelCheck(mon, menuBox, 0);
-            }
+            DisplayPartyPokemonNickname(mon, menuBox, 0);
+            DisplayPartyPokemonGenderNidoranCheck(mon, menuBox, 0);
+            DisplayPartyPokemonLevelCheck(mon, menuBox, 0);
         }
     }
     if (c != 2)
     {
-        if (SWSH_PARTY_MENU)
-        {
-            AddTextPrinterParameterized3(menuBox->windowId, FONT_SMALL, menuBox->infoRects->descTextLeft, menuBox->infoRects->descTextTop, sFontColorTable[0], 0, sDescriptionStringTable[stringID]);
-        }
-        else
-        {
-            AddTextPrinterParameterized3(menuBox->windowId, FONT_NORMAL, menuBox->infoRects->descTextLeft, menuBox->infoRects->descTextTop, sFontColorTable[0], 0, sDescriptionStringTable[stringID]);
-        }
+        AddTextPrinterParameterized3(menuBox->windowId, FONT_SMALL, menuBox->infoRects->descTextLeft, menuBox->infoRects->descTextTop, sFontColorTable[0], 0, sDescriptionStringTable[stringID]);
     }
 }
 
