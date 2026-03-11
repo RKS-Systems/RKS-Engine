@@ -752,7 +752,6 @@ static void VBlankCB_PartyMenu(void)
     TransferPlttBuffer();
     ChangeBgX(3, 64, BG_COORD_ADD);
     ChangeBgY(3, 64, BG_COORD_ADD);
-
     if (SWSH_PARTY_MON_IDLE_ANIMS && sMonSpriteId != 0 && sMonSpriteId != MAX_SPRITES)
     {
         RunMonAnimTimer();
