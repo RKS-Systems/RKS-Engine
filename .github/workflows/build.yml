@@ -39,6 +39,18 @@ jobs:
           make touch-config_overrides
           make -j${nproc} -O all
 
+      - name: ROM (Firered)
+        env:
+          COMPARE: 0
+        run: |
+          make firered -j${nproc} -O
+
+      - name: ROM (Leafgreen)
+        env:
+          COMPARE: 0
+        run: |
+          make leafgreen -j${nproc} -O
+
       - name: Release
         env:
           GAME_VERSION: EMERALD
@@ -53,16 +65,3 @@ jobs:
           TEST: 1
         run: |
           make -j${nproc} check
-
-      - name: ROM (Firered)
-        env:
-          COMPARE: 0
-        run: |
-          make clean
-          make firered -j${nproc} -O
-
-      - name: ROM (Leafgreen)
-        env:
-          COMPARE: 0
-        run: |
-          make leafgreen -j${nproc} -O
