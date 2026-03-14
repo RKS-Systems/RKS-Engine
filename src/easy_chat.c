@@ -5502,8 +5502,7 @@ static u16 GetRandomUnlockedEasyChatPokemon(void)
     numWords = gEasyChatGroups[EC_GROUP_POKEMON].numWords;
     for (i = 0; i < numWords; i++)
     {
-        enum NationalDexOrder dexNum = SpeciesToNationalPokedexNum(*species);
-        if (GetSetPokedexFlag(dexNum, FLAG_GET_SEEN))
+        if (GetSetPokedexFlag(*species, FLAG_GET_SEEN))
         {
             if (index)
                 index--;
@@ -5766,10 +5765,10 @@ static bool8 IsEasyChatIndexAndGroupUnlocked(u16 wordIndex, u8 groupId)
     switch (groupId)
     {
     case EC_GROUP_POKEMON:
-        return GetSetPokedexFlag(SpeciesToNationalPokedexNum(wordIndex), FLAG_GET_SEEN);
+        return GetSetPokedexFlag(wordIndex, FLAG_GET_SEEN);
     case EC_GROUP_POKEMON_NATIONAL:
         if (IsRestrictedWordSpecies(wordIndex))
-            GetSetPokedexFlag(SpeciesToNationalPokedexNum(wordIndex), FLAG_GET_SEEN);
+            GetSetPokedexFlag(wordIndex, FLAG_GET_SEEN);
         return TRUE;
     case EC_GROUP_MOVE_1:
     case EC_GROUP_MOVE_2:
