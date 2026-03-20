@@ -181,7 +181,7 @@ class WildEncounterAssembler:
             map_group = map_data["mapGroup"]
             map_num = map_data["mapNum"]
 
-            defined = '#if defined(EMERALD) || FRLG_INCLUDE_HOENN_MAPS'
+            defined = '#if defined(EMERALD) || EM_INCLUDE_HOENN_MAPS'
             if "FireRed" in shared_label:
                 defined = '#if defined(FIRERED)'
                 if self.config.use_firered_wild == 'FIRE_RED':
@@ -258,7 +258,7 @@ class WildEncounterAssembler:
                 headers["data"][shared_label]["mapGroup"] = map_group
                 headers["data"][shared_label]["mapNum"] = map_num
 
-                defined = '#if defined(EMERALD) || FRLG_INCLUDE_HOENN_MAPS'
+                defined = '#if defined(EMERALD) || EM_INCLUDE_HOENN_MAPS'
                 if "FireRed" in shared_label:
                     defined = '#if defined(FIRERED)'
                     if self.config.use_firered_wild == 'FIRE_RED':
